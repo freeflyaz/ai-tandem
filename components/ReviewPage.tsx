@@ -50,10 +50,21 @@ export default function ReviewPage() {
       }
 
       const data = await response.json();
-      setGeneratedReview(data.review);
-    } catch (err) {
-      setError("Failed to generate review. Please try again.");
-      console.error(err);
+
+      if (data.error) {
+        // Show detailed error from API
+        const errorMsg = data.details
+          ? `${data.error}: ${data.details}`
+          : data.message || data.error;
+        setError(errorMsg);
+        console.error("API Error:", data);
+      } else {
+        setGeneratedReview(data.review);
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to generate review. Please try again.";
+      setError(errorMessage);
+      console.error("Request error:", err);
     } finally {
       setLoading(false);
     }
