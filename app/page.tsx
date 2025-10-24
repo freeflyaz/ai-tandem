@@ -1,14 +1,19 @@
+"use client";
+
+import { useState } from "react";
+import AuthPage from "@/components/AuthPage";
+import ReviewPage from "@/components/ReviewPage";
+
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold text-center mb-4">
-          Welcome to AI Tandem
-        </h1>
-        <p className="text-center text-gray-600">
-          Get started by editing <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-      </div>
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {!isAuthenticated ? (
+        <AuthPage onAuthenticate={() => setIsAuthenticated(true)} />
+      ) : (
+        <ReviewPage />
+      )}
     </main>
   );
 }
