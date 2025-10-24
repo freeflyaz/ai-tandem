@@ -2,39 +2,18 @@
 
 import { useState } from "react";
 
-const reviewOptions = [
-  {
-    id: "pilots",
-    title: "The Pilots",
-    description: "Professional and friendly crew",
-    icon: "✈️",
-  },
-  {
-    id: "booking",
-    title: "The Booking System",
-    description: "Easy and convenient booking process",
-    icon: "📱",
-  },
-  {
-    id: "flight",
-    title: "The Flight Itself",
-    description: "Comfortable and smooth experience",
-    icon: "🛫",
-  },
-];
-
 export default function ReviewPage() {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [generatedReview, setGeneratedReview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [germanReview, setGermanReview] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!selectedOption) return;
-
     setLoading(true);
     setError(null);
+    setGermanReview(null);
 
     try {
       const response = await fetch("/api/generate-review", {
@@ -42,7 +21,7 @@ export default function ReviewPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ selection: selectedOption }),
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
@@ -78,11 +57,45 @@ export default function ReviewPage() {
     }
   };
 
+  const handleTranslate = async () => {
+    if (!generatedReview) return;
+
+    setTranslating(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: generatedReview }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to translate review");
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setGermanReview(data.translation);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to translate. Please try again.");
+      console.error("Translation error:", err);
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const handleStartOver = () => {
-    setSelectedOption(null);
     setGeneratedReview(null);
     setError(null);
     setCopied(false);
+    setGermanReview(null);
   };
 
   if (generatedReview) {
@@ -102,6 +115,16 @@ export default function ReviewPage() {
           <div className="bg-white rounded-xl border-2 border-gray-200 p-6 shadow-sm">
             <p className="text-gray-800 leading-relaxed">{generatedReview}</p>
           </div>
+
+          {germanReview && (
+            <div className="bg-blue-50 rounded-xl border-2 border-blue-200 p-6 shadow-sm">
+              <div className="flex items-center space-x-2 mb-3">
+                <span className="text-lg">🇩🇪</span>
+                <span className="text-sm font-semibold text-blue-900">German Translation</span>
+              </div>
+              <p className="text-gray-800 leading-relaxed">{germanReview}</p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <button
@@ -145,6 +168,49 @@ export default function ReviewPage() {
               )}
             </button>
 
+            {!germanReview && (
+              <button
+                onClick={handleTranslate}
+                disabled={translating}
+                className={`w-full rounded-lg px-4 py-3 text-base font-semibold transition-colors flex items-center justify-center space-x-2 ${
+                  translating
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-green-600 text-white hover:bg-green-700 active:bg-green-800"
+                }`}
+              >
+                {translating ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>Translating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🇩🇪</span>
+                    <span>Translate to German</span>
+                  </>
+                )}
+              </button>
+            )}
+
             <button
               onClick={handleStartOver}
               className="w-full rounded-lg bg-gray-100 px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-200 active:bg-gray-300 transition-colors"
@@ -161,61 +227,13 @@ export default function ReviewPage() {
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
+          <div className="text-6xl mb-4">🪂</div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
             AI Review Writer
           </h1>
           <p className="text-gray-600">
-            What did you like the most?
+            Generate authentic reviews for Alpentandem.de
           </p>
-        </div>
-
-        <div className="mt-8 space-y-4">
-          {reviewOptions.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => setSelectedOption(option.id)}
-              className={`w-full text-left rounded-xl border-2 p-6 transition-all ${
-                selectedOption === option.id
-                  ? "border-blue-600 bg-blue-50 shadow-md"
-                  : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-              }`}
-            >
-              <div className="flex items-start space-x-4">
-                <div className="text-4xl flex-shrink-0">{option.icon}</div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {option.title}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {option.description}
-                  </p>
-                </div>
-                <div className="flex-shrink-0">
-                  <div
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      selectedOption === option.id
-                        ? "border-blue-600 bg-blue-600"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {selectedOption === option.id && (
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </button>
-          ))}
         </div>
 
         {error && (
@@ -224,45 +242,43 @@ export default function ReviewPage() {
           </div>
         )}
 
-        <div className="pt-4">
-          <button
-            onClick={handleSubmit}
-            disabled={!selectedOption || loading}
-            className={`w-full rounded-lg px-4 py-4 text-lg font-semibold text-white transition-colors flex items-center justify-center space-x-2 ${
-              selectedOption && !loading
-                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                : "bg-gray-300 cursor-not-allowed"
-            }`}
-          >
-            {loading ? (
-              <>
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span>Generating Review...</span>
-              </>
-            ) : (
-              <span>Generate Review</span>
-            )}
-          </button>
-        </div>
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className={`w-full rounded-lg px-6 py-5 text-xl font-semibold text-white transition-colors flex items-center justify-center space-x-2 ${
+            loading
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+          }`}
+        >
+          {loading ? (
+            <>
+              <svg
+                className="animate-spin h-6 w-6 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span>Generating Review...</span>
+            </>
+          ) : (
+            <span>Generate Review</span>
+          )}
+        </button>
       </div>
     </div>
   );
