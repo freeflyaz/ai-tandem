@@ -44,6 +44,13 @@ const WEIGHT_CLOUD_COVER = parseInt(process.env.WEIGHT_CLOUD_COVER || "10");
 // Precipitation Penalty
 const PRECIPITATION_PENALTY_PER_MM = parseInt(process.env.PRECIPITATION_PENALTY_PER_MM || "20");
 
+// Safety Constraints
+const MIN_CLOUD_BASE_MARGIN = parseInt(process.env.MIN_CLOUD_BASE_MARGIN || "200");
+const MIN_WIND_SPEED_FOR_DIRECTION_CHECK = parseInt(process.env.MIN_WIND_SPEED_FOR_DIRECTION_CHECK || "5");
+const MAX_WIND_SPEED_KMH = parseInt(process.env.MAX_WIND_SPEED_KMH || "35");
+const MAX_PRECIPITATION_MM = parseInt(process.env.MAX_PRECIPITATION_MM || "5");
+const DANGEROUS_WIND_DIRECTION_THRESHOLD = parseInt(process.env.DANGEROUS_WIND_DIRECTION_THRESHOLD || "50");
+
 interface CalculationBreakdown {
   windDirection: {
     value: number;
@@ -73,6 +80,12 @@ interface CalculationBreakdown {
     points: number;
     label: string;
   };
+  cloudBase: {
+    value: number;
+    minRequired: number;
+    isSafe: boolean;
+  };
+  safetyViolations: string[];
   total: number;
 }
 
@@ -133,13 +146,28 @@ function getWindDirectionLabel(windDirection: number): string {
 function getWindDirectionScore(windDirection: number): number {
   // Find matching range in custom configuration
   for (const range of WIND_DIRECTION_RANGES) {
-    if (windDirection >= range.start && windDirection <= range.end) {
-      return range.score;
+    // Check if this range wraps around 360/0 degrees
+    if (range.start > range.end) {
+      // Wrapping range (e.g., 290-30 means 290-360 and 0-30)
+      if (windDirection >= range.start || windDirection <= range.end) {
+        return range.score;
+      }
+    } else {
+      // Normal range (e.g., 30-70)
+      if (windDirection >= range.start && windDirection <= range.end) {
+        return range.score;
+      }
     }
   }
 
   // Default fallback
   return 50;
+}
+
+function isWindDirectionDangerous(windDirection: number): boolean {
+  // Check if the wind direction score is at or below the dangerous threshold
+  const score = getWindDirectionScore(windDirection);
+  return score <= DANGEROUS_WIND_DIRECTION_THRESHOLD;
 }
 
 function getWindSpeedLabel(windSpeed: number): string {
@@ -166,9 +194,78 @@ function calculateTakeoffPercentage(
   precipitation: number,
   windSpeed: number,
   windDirection: number,
-  cloudCover: number
+  cloudCover: number,
+  cloudBase: number
 ): { percentage: number; conditions: string[]; breakdown: CalculationBreakdown } {
   const conditions: string[] = [];
+  const safetyViolations: string[] = [];
+
+  // Calculate minimum required cloud base
+  const minRequiredCloudBase = BREITENBERG_ELEVATION + MIN_CLOUD_BASE_MARGIN;
+  const isCloudBaseSafe = cloudBase >= minRequiredCloudBase;
+
+  // Check safety constraints (HARD LIMITS)
+  if (!isCloudBaseSafe) {
+    safetyViolations.push(`Cloud base ${cloudBase}m is below minimum ${minRequiredCloudBase}m`);
+  }
+
+  if (windSpeed > MAX_WIND_SPEED_KMH) {
+    safetyViolations.push(`Wind too strong: ${windSpeed} km/h exceeds maximum ${MAX_WIND_SPEED_KMH} km/h`);
+  }
+
+  if (precipitation > MAX_PRECIPITATION_MM) {
+    safetyViolations.push(`Heavy rain: ${precipitation}mm exceeds maximum ${MAX_PRECIPITATION_MM}mm`);
+  }
+
+  if (windSpeed > MIN_WIND_SPEED_FOR_DIRECTION_CHECK && isWindDirectionDangerous(windDirection)) {
+    const dirName = getDirectionName(windDirection);
+    safetyViolations.push(`Dangerous wind direction: ${dirName} (${windDirection}°) with ${windSpeed} km/h`);
+  }
+
+  // If any safety violation exists, return 0% NOT FLYABLE
+  if (safetyViolations.length > 0) {
+    return {
+      percentage: 0,
+      conditions: ["✗ NOT FLYABLE - Safety constraints violated"],
+      breakdown: {
+        windDirection: {
+          value: windDirection,
+          score: 0,
+          weight: WEIGHT_WIND_DIRECTION,
+          points: 0,
+          label: getWindDirectionLabel(windDirection),
+        },
+        windSpeed: {
+          value: windSpeed,
+          score: 0,
+          weight: WEIGHT_WIND_SPEED,
+          points: 0,
+          label: getWindSpeedLabel(windSpeed),
+        },
+        precipitation: {
+          value: precipitation,
+          score: 0,
+          weight: WEIGHT_PRECIPITATION,
+          points: 0,
+          label: `${precipitation}mm rain`,
+        },
+        cloudCover: {
+          value: cloudCover,
+          score: 0,
+          weight: WEIGHT_CLOUD_COVER,
+          points: 0,
+          label: cloudCover < 30 ? "Clear" : cloudCover < 70 ? "Partly cloudy" : "Heavy clouds",
+        },
+        cloudBase: {
+          value: cloudBase,
+          minRequired: minRequiredCloudBase,
+          isSafe: isCloudBaseSafe,
+        },
+        safetyViolations,
+        total: 0,
+      },
+    };
+  }
 
   // 1. Wind Direction
   const directionScore = getWindDirectionScore(windDirection);
@@ -260,6 +357,12 @@ function calculateTakeoffPercentage(
         points: Math.round(cloudPoints * 10) / 10,
         label: cloudLabel,
       },
+      cloudBase: {
+        value: cloudBase,
+        minRequired: minRequiredCloudBase,
+        isSafe: isCloudBaseSafe,
+      },
+      safetyViolations,
       total: Math.round(totalScore),
     },
   };
@@ -294,8 +397,9 @@ export async function GET() {
       const temperature = hourlyData.temperature_2m[middayIndex];
       const dewpoint = hourlyData.dewpoint_2m[middayIndex];
       const precipitation = dailyData.precipitation_sum[i];
-      const windSpeed = dailyData.windspeed_10m_max[i];
-      const windDirection = dailyData.winddirection_10m_dominant[i];
+      // Use hourly midday data for wind instead of daily aggregates for consistency
+      const windSpeed = hourlyData.windspeed_10m[middayIndex];
+      const windDirection = hourlyData.winddirection_10m[middayIndex];
       const cloudCover = hourlyData.cloudcover[middayIndex];
 
       const cloudBase = calculateCloudBase(temperature, dewpoint);
@@ -306,7 +410,8 @@ export async function GET() {
         precipitation,
         windSpeed,
         windDirection,
-        cloudCover
+        cloudCover,
+        cloudBase
       );
 
       forecasts.push({

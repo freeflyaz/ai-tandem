@@ -32,6 +32,12 @@ interface CalculationBreakdown {
     points: number;
     label: string;
   };
+  cloudBase: {
+    value: number;
+    minRequired: number;
+    isSafe: boolean;
+  };
+  safetyViolations: string[];
   total: number;
 }
 
@@ -54,6 +60,34 @@ export default function WeatherPredictor() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
+
+  const getDirectionName = (degrees: number): string => {
+    const directions = [
+      { name: "N", min: 0, max: 22.5 },
+      { name: "NNE", min: 22.5, max: 45 },
+      { name: "NE", min: 45, max: 67.5 },
+      { name: "ENE", min: 67.5, max: 90 },
+      { name: "E", min: 90, max: 112.5 },
+      { name: "ESE", min: 112.5, max: 135 },
+      { name: "SE", min: 135, max: 157.5 },
+      { name: "SSE", min: 157.5, max: 180 },
+      { name: "S", min: 180, max: 202.5 },
+      { name: "SSW", min: 202.5, max: 225 },
+      { name: "SW", min: 225, max: 247.5 },
+      { name: "WSW", min: 247.5, max: 270 },
+      { name: "W", min: 270, max: 292.5 },
+      { name: "WNW", min: 292.5, max: 315 },
+      { name: "NW", min: 315, max: 337.5 },
+      { name: "NNW", min: 337.5, max: 360 },
+    ];
+
+    for (const dir of directions) {
+      if (degrees >= dir.min && degrees < dir.max) {
+        return dir.name;
+      }
+    }
+    return "N"; // Default for 360 degrees
+  };
 
   useEffect(() => {
     fetchWeather();
@@ -236,7 +270,7 @@ export default function WeatherPredictor() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">🧭 Dir</span>
-                  <span className="font-semibold">{day.windDirection}°</span>
+                  <span className="font-semibold">{getDirectionName(day.windDirection)} ({day.windDirection}°)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">☁️ Base</span>
@@ -291,6 +325,46 @@ export default function WeatherPredictor() {
                 {expandedDay === index && (
                   <div className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2 text-xs">
                     <div className="font-bold text-gray-900 mb-2">How {day.percentage}% was calculated:</div>
+
+                    {/* Safety Violations */}
+                    {day.breakdown.safetyViolations && day.breakdown.safetyViolations.length > 0 && (
+                      <div className="bg-red-100 border-2 border-red-500 rounded-lg p-3 mb-3">
+                        <div className="font-bold text-red-900 mb-2 flex items-center">
+                          <span className="text-lg mr-2">⚠️</span>
+                          SAFETY VIOLATIONS - NOT FLYABLE
+                        </div>
+                        <ul className="space-y-1 text-red-800">
+                          {day.breakdown.safetyViolations.map((violation, idx) => (
+                            <li key={idx} className="flex items-start">
+                              <span className="mr-2">•</span>
+                              <span>{violation}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-2 text-xs text-red-700 italic">
+                          These conditions make flying unsafe. All scores set to 0.
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cloud Base Safety Check */}
+                    <div className="border-b border-gray-200 pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-700">Cloud Base Safety</div>
+                          <div className="text-gray-600">
+                            {day.breakdown.cloudBase.value}m
+                            {day.breakdown.cloudBase.isSafe ? " ✓" : " ✗"}
+                            (min: {day.breakdown.cloudBase.minRequired}m)
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-semibold ${day.breakdown.cloudBase.isSafe ? "text-green-600" : "text-red-600"}`}>
+                            {day.breakdown.cloudBase.isSafe ? "SAFE" : "UNSAFE"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Wind Direction */}
                     <div className="border-b border-gray-200 pb-2">
