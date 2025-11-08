@@ -5,14 +5,27 @@ const BREITENBERG_LAT = parseFloat(process.env.BREITENBERG_LAT || "47.47056");
 const BREITENBERG_LON = parseFloat(process.env.BREITENBERG_LON || "10.38222");
 const BREITENBERG_ELEVATION = parseInt(process.env.BREITENBERG_ELEVATION || "1690");
 
-// Wind Direction Scores
-const WIND_DIR_NORTH_SCORE = parseInt(process.env.WIND_DIR_NORTH_SCORE || "100");
-const WIND_DIR_NE_E_SCORE = parseInt(process.env.WIND_DIR_NE_E_SCORE || "100");
-const WIND_DIR_E_SE_SCORE = parseInt(process.env.WIND_DIR_E_SE_SCORE || "90");
-const WIND_DIR_SE_S_SCORE = parseInt(process.env.WIND_DIR_SE_S_SCORE || "60");
-const WIND_DIR_S_SW_SCORE = parseInt(process.env.WIND_DIR_S_SW_SCORE || "30");
-const WIND_DIR_SW_W_SCORE = parseInt(process.env.WIND_DIR_SW_W_SCORE || "20");
-const WIND_DIR_W_NW_SCORE = parseInt(process.env.WIND_DIR_W_NW_SCORE || "10");
+// Parse Wind Direction Ranges from .env
+// Format: "0-45:100,45-90:100,90-135:90,..."
+interface WindDirectionRange {
+  start: number;
+  end: number;
+  score: number;
+}
+
+const DEFAULT_WIND_DIRECTION_RANGES = "0-45:100,45-90:100,90-135:90,135-180:60,180-225:30,225-270:20,270-315:10,315-360:100";
+
+function parseWindDirectionRanges(rangesStr: string): WindDirectionRange[] {
+  return rangesStr.split(',').map(range => {
+    const [degrees, score] = range.split(':');
+    const [start, end] = degrees.split('-').map(Number);
+    return { start, end, score: parseInt(score) };
+  });
+}
+
+const WIND_DIRECTION_RANGES = parseWindDirectionRanges(
+  process.env.WIND_DIRECTION_RANGES || DEFAULT_WIND_DIRECTION_RANGES
+);
 
 // Wind Speed Scores
 const WIND_SPEED_0_5_SCORE = parseInt(process.env.WIND_SPEED_0_5_SCORE || "50");
@@ -74,55 +87,59 @@ function calculateCloudBase(temperature: number, dewpoint: number): number {
   return Math.round(BREITENBERG_ELEVATION + cloudBaseMeters);
 }
 
+function getDirectionName(degrees: number): string {
+  const directions = [
+    { name: "N", min: 0, max: 22.5 },
+    { name: "NNE", min: 22.5, max: 45 },
+    { name: "NE", min: 45, max: 67.5 },
+    { name: "ENE", min: 67.5, max: 90 },
+    { name: "E", min: 90, max: 112.5 },
+    { name: "ESE", min: 112.5, max: 135 },
+    { name: "SE", min: 135, max: 157.5 },
+    { name: "SSE", min: 157.5, max: 180 },
+    { name: "S", min: 180, max: 202.5 },
+    { name: "SSW", min: 202.5, max: 225 },
+    { name: "SW", min: 225, max: 247.5 },
+    { name: "WSW", min: 247.5, max: 270 },
+    { name: "W", min: 270, max: 292.5 },
+    { name: "WNW", min: 292.5, max: 315 },
+    { name: "NW", min: 315, max: 337.5 },
+    { name: "NNW", min: 337.5, max: 360 },
+  ];
+
+  for (const dir of directions) {
+    if (degrees >= dir.min && degrees < dir.max) {
+      return dir.name;
+    }
+  }
+  return "N"; // Default for 360 degrees
+}
+
+function getQualityLabel(score: number): string {
+  if (score >= 90) return "Excellent";
+  if (score >= 70) return "Good";
+  if (score >= 50) return "Acceptable";
+  if (score >= 30) return "Poor";
+  return "Bad";
+}
+
 function getWindDirectionLabel(windDirection: number): string {
-  if ((windDirection >= 315 && windDirection <= 360) || (windDirection >= 0 && windDirection <= 45)) {
-    return "North (Best)";
-  }
-  if (windDirection > 45 && windDirection <= 90) {
-    return "Northeast-East (Excellent)";
-  }
-  if (windDirection > 90 && windDirection <= 135) {
-    return "East-Southeast (Good)";
-  }
-  if (windDirection > 135 && windDirection <= 180) {
-    return "Southeast-South (Acceptable)";
-  }
-  if (windDirection > 180 && windDirection <= 225) {
-    return "South-Southwest (Poor)";
-  }
-  if (windDirection > 225 && windDirection <= 270) {
-    return "Southwest-West (Poor)";
-  }
-  return "West-Northwest (Bad)";
+  const score = getWindDirectionScore(windDirection);
+  const dirName = getDirectionName(windDirection);
+  const quality = getQualityLabel(score);
+  return `${dirName} (${quality})`;
 }
 
 function getWindDirectionScore(windDirection: number): number {
-  // North sector (315-360 and 0-45)
-  if ((windDirection >= 315 && windDirection <= 360) || (windDirection >= 0 && windDirection <= 45)) {
-    return WIND_DIR_NORTH_SCORE;
+  // Find matching range in custom configuration
+  for (const range of WIND_DIRECTION_RANGES) {
+    if (windDirection >= range.start && windDirection <= range.end) {
+      return range.score;
+    }
   }
-  // Northeast to East (45-90)
-  if (windDirection > 45 && windDirection <= 90) {
-    return WIND_DIR_NE_E_SCORE;
-  }
-  // East to Southeast (90-135)
-  if (windDirection > 90 && windDirection <= 135) {
-    return WIND_DIR_E_SE_SCORE;
-  }
-  // Southeast to South (135-180)
-  if (windDirection > 135 && windDirection <= 180) {
-    return WIND_DIR_SE_S_SCORE;
-  }
-  // South to Southwest (180-225)
-  if (windDirection > 180 && windDirection <= 225) {
-    return WIND_DIR_S_SW_SCORE;
-  }
-  // Southwest to West (225-270)
-  if (windDirection > 225 && windDirection <= 270) {
-    return WIND_DIR_SW_W_SCORE;
-  }
-  // West to Northwest (270-315)
-  return WIND_DIR_W_NW_SCORE;
+
+  // Default fallback
+  return 50;
 }
 
 function getWindSpeedLabel(windSpeed: number): string {
