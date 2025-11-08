@@ -41,6 +41,18 @@ interface CalculationBreakdown {
   total: number;
 }
 
+interface HourlyWind {
+  hour: string;
+  windSpeed: number;
+  windDirection: number;
+  percentage: number;
+  isFlyable: boolean;
+  temperature: number;
+  cloudBase: number;
+  precipitation: number;
+  safetyViolations: string[];
+}
+
 interface DayForecast {
   date: string;
   dayName: string;
@@ -53,6 +65,7 @@ interface DayForecast {
   cloudCover: number;
   conditions: string[];
   breakdown: CalculationBreakdown;
+  hourlyWind: HourlyWind[];
 }
 
 export default function WeatherPredictor() {
@@ -60,6 +73,7 @@ export default function WeatherPredictor() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
+  const [expandedHourly, setExpandedHourly] = useState<number | null>(null);
 
   const getDirectionName = (degrees: number): string => {
     const directions = [
@@ -441,6 +455,102 @@ export default function WeatherPredictor() {
                     <div className="mt-2 text-xs text-gray-500 italic">
                       Tip: Adjust scoring in .env.local file to fine-tune calculations
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Hourly Breakdown - Main Focus */}
+              <div className="px-4 pb-4">
+                <button
+                  onClick={() => setExpandedHourly(expandedHourly === index ? null : index)}
+                  className="w-full text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center justify-center space-x-1 py-2 border-t border-gray-200"
+                >
+                  <span>{expandedHourly === index ? "Hide" : "Show"} Hourly Breakdown (9:00-16:00)</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${expandedHourly === index ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {expandedHourly === index && day.hourlyWind && (
+                  <div className="mt-3 bg-gradient-to-b from-gray-50 to-white rounded-lg p-4 space-y-2">
+                    <div className="font-bold text-gray-900 mb-3 text-sm">Hourly Forecast (Flying Hours):</div>
+
+                    {day.hourlyWind.map((hourly, idx) => (
+                      <div
+                        key={idx}
+                        className={`rounded-lg p-3 border-2 ${
+                          hourly.isFlyable
+                            ? hourly.percentage >= 70
+                              ? "bg-green-50 border-green-300"
+                              : "bg-yellow-50 border-yellow-300"
+                            : "bg-red-50 border-red-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-bold text-lg text-gray-900">{hourly.hour}</div>
+                          <div className={`text-2xl font-bold ${
+                            hourly.isFlyable
+                              ? hourly.percentage >= 70
+                                ? "text-green-600"
+                                : "text-yellow-600"
+                              : "text-red-600"
+                          }`}>
+                            {hourly.percentage}%
+                          </div>
+                        </div>
+
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">💨 Wind Speed:</span>
+                            <span className="font-semibold">{hourly.windSpeed} km/h</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">🧭 Direction:</span>
+                            <span className="font-semibold">
+                              {getDirectionName(hourly.windDirection)} ({hourly.windDirection}°)
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">🌡️ Temperature:</span>
+                            <span className="font-semibold">{hourly.temperature}°C</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">☁️ Cloud Base:</span>
+                            <span className="font-semibold">{hourly.cloudBase}m</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">🌧️ Rain:</span>
+                            <span className={`font-semibold ${hourly.precipitation > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              {hourly.precipitation > 0 ? `${hourly.precipitation}mm` : 'None'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {!hourly.isFlyable && hourly.safetyViolations && hourly.safetyViolations.length > 0 && (
+                          <div className="mt-3 pt-2 border-t-2 border-red-400">
+                            <div className="text-xs font-bold text-red-800 mb-1">⚠️ SAFETY VIOLATIONS:</div>
+                            <ul className="text-xs text-red-700 space-y-1">
+                              {hourly.safetyViolations.map((violation, vIdx) => (
+                                <li key={vIdx} className="flex items-start">
+                                  <span className="mr-1">•</span>
+                                  <span>{violation}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

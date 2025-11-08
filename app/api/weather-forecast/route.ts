@@ -96,8 +96,8 @@ function calculateCloudBase(temperature: number, dewpoint: number): number {
   const cloudBaseFeet = (tempDiff / 2.5) * 1000;
   const cloudBaseMeters = cloudBaseFeet * 0.3048;
 
-  // Add to ground elevation
-  return Math.round(BREITENBERG_ELEVATION + cloudBaseMeters);
+  // Add to ground elevation (don't round - keep precision for safety checks)
+  return BREITENBERG_ELEVATION + cloudBaseMeters;
 }
 
 function getDirectionName(degrees: number): string {
@@ -397,10 +397,34 @@ export async function GET() {
       const temperature = hourlyData.temperature_2m[middayIndex];
       const dewpoint = hourlyData.dewpoint_2m[middayIndex];
       const precipitation = dailyData.precipitation_sum[i];
-      // Use hourly midday data for wind instead of daily aggregates for consistency
-      const windSpeed = hourlyData.windspeed_10m[middayIndex];
-      const windDirection = hourlyData.winddirection_10m[middayIndex];
       const cloudCover = hourlyData.cloudcover[middayIndex];
+
+      // Calculate average wind for flying hours (9:00-16:00)
+      let totalWindSpeed = 0;
+      let totalWindX = 0;
+      let totalWindY = 0;
+      const flyingHours = 8; // 9:00 to 16:00 inclusive
+
+      for (let h = 9; h <= 16; h++) {
+        const hourIndex = i * 24 + h;
+        const hourWindSpeed = hourlyData.windspeed_10m[hourIndex];
+        const hourWindDir = hourlyData.winddirection_10m[hourIndex];
+
+        // Sum wind speeds
+        totalWindSpeed += hourWindSpeed;
+
+        // Convert wind direction to vector components for proper averaging
+        const radians = (hourWindDir * Math.PI) / 180;
+        totalWindX += Math.sin(radians) * hourWindSpeed;
+        totalWindY += Math.cos(radians) * hourWindSpeed;
+      }
+
+      // Average wind speed
+      const windSpeed = totalWindSpeed / flyingHours;
+
+      // Average wind direction from vector components
+      let windDirection = (Math.atan2(totalWindX, totalWindY) * 180) / Math.PI;
+      if (windDirection < 0) windDirection += 360;
 
       const cloudBase = calculateCloudBase(temperature, dewpoint);
 
@@ -414,6 +438,62 @@ export async function GET() {
         cloudBase
       );
 
+      // Get hourly wind data for flying hours only (9:00-16:00)
+      const hourlyWind = [];
+      for (let h = 9; h <= 16; h++) {
+        const hourIndex = i * 24 + h;
+        const hourTime = new Date(hourlyData.time[hourIndex]);
+        const hourStr = hourTime.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+
+        const hourTemp = hourlyData.temperature_2m[hourIndex];
+        const hourDewpoint = hourlyData.dewpoint_2m[hourIndex];
+        const hourWindSpeed = hourlyData.windspeed_10m[hourIndex];
+        const hourWindDir = hourlyData.winddirection_10m[hourIndex];
+        const hourCloudCover = hourlyData.cloudcover[hourIndex];
+        const hourPrecipitation = hourlyData.precipitation[hourIndex] || 0;
+        const hourCloudBase = calculateCloudBase(hourTemp, hourDewpoint);
+
+        // Calculate flyability for this specific hour
+        const hourlyCalc = calculateTakeoffPercentage(
+          hourTemp,
+          hourDewpoint,
+          hourPrecipitation, // Use actual hourly precipitation
+          hourWindSpeed,
+          hourWindDir,
+          hourCloudCover,
+          hourCloudBase
+        );
+
+        // Debug for 13:00
+        if (h === 13) {
+          console.log(`\n=== 13:00 DEBUG ===`);
+          console.log(`Wind Direction: ${hourWindDir}°`);
+          console.log(`Wind Speed: ${hourWindSpeed} km/h`);
+          console.log(`Precipitation: ${hourPrecipitation}mm`);
+          console.log(`Cloud Base: ${hourCloudBase}m (min required: ${BREITENBERG_ELEVATION + MIN_CLOUD_BASE_MARGIN})`);
+          console.log(`Wind Direction Score: ${getWindDirectionScore(hourWindDir)}`);
+          console.log(`Percentage: ${hourlyCalc.percentage}%`);
+          console.log(`Safety Violations:`, hourlyCalc.breakdown.safetyViolations);
+          console.log(`==================\n`);
+        }
+
+        hourlyWind.push({
+          hour: hourStr,
+          windSpeed: Math.round(hourWindSpeed),
+          windDirection: Math.round(hourWindDir),
+          percentage: hourlyCalc.percentage,
+          isFlyable: hourlyCalc.percentage > 0,
+          temperature: Math.round(hourTemp),
+          cloudBase: Math.round(hourCloudBase), // Round for display
+          precipitation: Math.round(hourPrecipitation * 10) / 10,
+          safetyViolations: hourlyCalc.breakdown.safetyViolations || [],
+        });
+      }
+
       forecasts.push({
         date: dateStr,
         dayName,
@@ -422,10 +502,11 @@ export async function GET() {
         windDirection: Math.round(windDirection),
         temperature: Math.round(temperature),
         rain: Math.round(precipitation * 10) / 10,
-        cloudBase,
+        cloudBase: Math.round(cloudBase), // Round for display
         cloudCover: Math.round(cloudCover),
         conditions,
         breakdown,
+        hourlyWind,
       });
     }
 
