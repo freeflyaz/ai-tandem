@@ -3,6 +3,38 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+interface CalculationBreakdown {
+  windDirection: {
+    value: number;
+    score: number;
+    weight: number;
+    points: number;
+    label: string;
+  };
+  windSpeed: {
+    value: number;
+    score: number;
+    weight: number;
+    points: number;
+    label: string;
+  };
+  precipitation: {
+    value: number;
+    score: number;
+    weight: number;
+    points: number;
+    label: string;
+  };
+  cloudCover: {
+    value: number;
+    score: number;
+    weight: number;
+    points: number;
+    label: string;
+  };
+  total: number;
+}
+
 interface DayForecast {
   date: string;
   dayName: string;
@@ -12,13 +44,16 @@ interface DayForecast {
   temperature: number;
   rain: number;
   cloudBase: number;
+  cloudCover: number;
   conditions: string[];
+  breakdown: CalculationBreakdown;
 }
 
 export default function WeatherPredictor() {
   const [forecast, setForecast] = useState<DayForecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
 
   useEffect(() => {
     fetchWeather();
@@ -230,6 +265,111 @@ export default function WeatherPredictor() {
                   </div>
                 </div>
               )}
+
+              {/* Calculation Breakdown */}
+              <div className="px-4 pb-4">
+                <button
+                  onClick={() => setExpandedDay(expandedDay === index ? null : index)}
+                  className="w-full text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center justify-center space-x-1 py-2 border-t border-gray-200"
+                >
+                  <span>{expandedDay === index ? "Hide" : "Show"} Calculation</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform ${expandedDay === index ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {expandedDay === index && (
+                  <div className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2 text-xs">
+                    <div className="font-bold text-gray-900 mb-2">How {day.percentage}% was calculated:</div>
+
+                    {/* Wind Direction */}
+                    <div className="border-b border-gray-200 pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-700">Wind Direction</div>
+                          <div className="text-gray-600">{day.windDirection}° = {day.breakdown.windDirection.label}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-gray-900">{day.breakdown.windDirection.points} pts</div>
+                          <div className="text-gray-500 text-xs">
+                            {day.breakdown.windDirection.score} × {day.breakdown.windDirection.weight}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Wind Speed */}
+                    <div className="border-b border-gray-200 pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-700">Wind Speed</div>
+                          <div className="text-gray-600">{day.windSpeed} km/h = {day.breakdown.windSpeed.label}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-gray-900">{day.breakdown.windSpeed.points} pts</div>
+                          <div className="text-gray-500 text-xs">
+                            {day.breakdown.windSpeed.score} × {day.breakdown.windSpeed.weight}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Precipitation */}
+                    <div className="border-b border-gray-200 pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-700">Precipitation</div>
+                          <div className="text-gray-600">{day.breakdown.precipitation.label}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-gray-900">{day.breakdown.precipitation.points} pts</div>
+                          <div className="text-gray-500 text-xs">
+                            {day.breakdown.precipitation.score} × {day.breakdown.precipitation.weight}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cloud Cover */}
+                    <div className="border-b border-gray-200 pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-700">Cloud Cover</div>
+                          <div className="text-gray-600">{day.cloudCover}% = {day.breakdown.cloudCover.label}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-gray-900">{day.breakdown.cloudCover.points} pts</div>
+                          <div className="text-gray-500 text-xs">
+                            {day.breakdown.cloudCover.score} × {day.breakdown.cloudCover.weight}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total */}
+                    <div className="pt-2 border-t-2 border-gray-300">
+                      <div className="flex justify-between items-center">
+                        <div className="font-bold text-gray-900">Total Score</div>
+                        <div className="text-lg font-bold text-blue-600">{day.breakdown.total}%</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 text-xs text-gray-500 italic">
+                      Tip: Adjust scoring in .env.local file to fine-tune calculations
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -260,9 +400,16 @@ export default function WeatherPredictor() {
               </div>
             </div>
           </div>
-          <div className="mt-4 text-xs text-gray-600">
-            <strong>Calculation factors:</strong> Wind direction (N/NE/E/SE optimal),
-            wind speed (8-24 km/h ideal), precipitation, and estimated cloud base height.
+          <div className="mt-4 space-y-2">
+            <div className="text-xs text-gray-600">
+              <strong>Calculation factors:</strong> Wind direction (40% weight),
+              wind speed (30% weight), precipitation (20% weight), and cloud cover (10% weight).
+            </div>
+            <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg">
+              <strong>💡 Fine-tune the calculation:</strong> Create a <code className="bg-white px-1 py-0.5 rounded">.env.local</code> file
+              (copy from <code className="bg-white px-1 py-0.5 rounded">.env.example</code>) to customize wind speed scores,
+              wind direction scores, and calculation weights for your specific location.
+            </div>
           </div>
         </div>
 
