@@ -53,22 +53,178 @@ export async function POST(request: NextRequest) {
     console.log('Navigating to URL:', url);
     await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
 
+    // Wait for page to load
+    await page.waitForTimeout(2000);
+
+    console.log('Page title:', await page.title());
+    console.log('Page URL:', page.url());
+
+    // Handle Google consent page if it appears
+    if (page.url().includes('consent.google.com')) {
+      console.log('Detected consent page, accepting...');
+
+      try {
+        // Try multiple consent button selectors
+        const consentButtons = [
+          'button:has-text("Alle akzeptieren")',
+          'button:has-text("Accept all")',
+          'button:has-text("Ich stimme zu")',
+          'button:has-text("I agree")',
+          'form:has-text("Alle akzeptieren") button',
+          'form:has-text("Accept all") button'
+        ];
+
+        let clicked = false;
+        for (const selector of consentButtons) {
+          try {
+            const button = page.locator(selector).first();
+            if (await button.isVisible({ timeout: 2000 })) {
+              console.log(`Clicking consent button: ${selector}`);
+              await button.click();
+              clicked = true;
+              break;
+            }
+          } catch (e) {
+            // Try next selector
+          }
+        }
+
+        if (!clicked) {
+          console.log('Could not find consent button, trying to continue anyway...');
+        } else {
+          // Wait for navigation to Google Maps
+          await page.waitForURL('**/maps/**', { timeout: 30000 });
+          console.log('Successfully navigated to Google Maps');
+        }
+      } catch (e) {
+        console.error('Error handling consent page:', e);
+      }
+    }
+
     // Wait for reviews to load
     await page.waitForTimeout(3000);
 
-    // Try to click on reviews tab if not already there
+    console.log('Final page URL:', page.url());
+
+    // Take a screenshot for debugging - use tall viewport to see more content
+    await page.setViewportSize({ width: 414, height: 6000 }); // Very tall viewport for better vertical view
+    const screenshotPath = path.join(process.cwd(), 'data', 'debug-screenshot.png');
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    console.log('Screenshot saved to:', screenshotPath);
+
+    // CRITICAL: Click "Weitere Rezensionen" to open full reviews panel
+    console.log('Looking for "Weitere Rezensionen" button...');
     try {
-      const reviewsTab = page.locator('button:has-text("Rezensionen"), button:has-text("Reviews")').first();
-      if (await reviewsTab.isVisible({ timeout: 2000 })) {
-        await reviewsTab.click();
-        await page.waitForTimeout(2000);
+      const moreReviewsSelectors = [
+        'button:has-text("Weitere Rezensionen")',
+        'a:has-text("Weitere Rezensionen")',
+        'button:has-text("More reviews")',
+        'a:has-text("More reviews")',
+        'button:has-text("Rezensionen")',
+        '[role="button"]:has-text("Rezensionen")'
+      ];
+
+      let clicked = false;
+      for (const selector of moreReviewsSelectors) {
+        try {
+          const button = page.locator(selector);
+          const count = await button.count();
+          console.log(`  Checking selector "${selector}": ${count} elements`);
+
+          if (count > 0) {
+            const text = await button.first().textContent({ timeout: 2000 });
+            console.log(`  Button text: "${text}"`);
+
+            if (await button.first().isVisible({ timeout: 2000 })) {
+              console.log(`  ✓ Clicking "Weitere Rezensionen" button!`);
+              await button.first().click();
+              clicked = true;
+
+              // Wait for reviews panel to open
+              await page.waitForTimeout(3000);
+
+              // Take screenshot after clicking
+              const afterClickPath = path.join(process.cwd(), 'data', 'debug-after-click.png');
+              await page.screenshot({ path: afterClickPath, fullPage: true });
+              console.log('  After-click screenshot saved');
+              break;
+            }
+          }
+        } catch (e: any) {
+          console.log(`  Selector "${selector}" failed: ${e.message}`);
+        }
+      }
+
+      if (!clicked) {
+        console.log('  ⚠ Could not find "Weitere Rezensionen" button - will scrape preview reviews only');
       }
     } catch (e) {
-      console.log('Reviews tab not found or already on reviews');
+      console.log('Error clicking reviews button:', e);
     }
 
-    // Get business info
-    const businessName = await page.locator('h1').first().textContent() || 'Unknown Business';
+    // Get business info - use a more flexible selector with timeout
+    let businessName = 'Unknown Business';
+    try {
+      businessName = await page.locator('h1').first().textContent({ timeout: 5000 }) || 'Unknown Business';
+      console.log('Business name:', businessName);
+    } catch (e) {
+      console.log('Could not find h1, trying alternative selectors');
+      // Try alternative selectors for business name
+      const altNameSelectors = ['[role="heading"]', 'header h1', 'div[role="main"] h1'];
+      for (const selector of altNameSelectors) {
+        try {
+          const name = await page.locator(selector).first().textContent({ timeout: 2000 });
+          if (name) {
+            businessName = name;
+            console.log('Found business name with selector', selector, ':', businessName);
+            break;
+          }
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+    }
+
+    // Debug: Check what selectors exist
+    console.log('Looking for review elements...');
+
+    // Try alternative selectors - Google Maps uses different attributes
+    const altSelectors = [
+      '[data-review-id]',
+      'div[jsaction*="review"]',
+      'div[data-review-id]',
+      'div[jslog*="impression"]',  // Google uses jslog for tracking
+      '[aria-label*="stars"]',
+      'div.jftiEf',  // Common Google Maps review class (may change)
+      'div[data-attrid-class]'
+    ];
+
+    let bestSelector = '[data-review-id]';
+    let maxCount = 0;
+
+    for (const selector of altSelectors) {
+      const count = await page.locator(selector).count();
+      console.log(`Selector "${selector}":`, count, 'elements');
+      if (count > maxCount) {
+        maxCount = count;
+        bestSelector = selector;
+      }
+    }
+
+    console.log('Best selector found:', bestSelector, 'with', maxCount, 'elements');
+
+    // Dump HTML from first review element to inspect structure
+    if (maxCount > 0) {
+      console.log('Inspecting first review element HTML...');
+      const firstReview = page.locator(bestSelector).first();
+      const reviewHTML = await firstReview.innerHTML();
+      console.log('First review HTML (first 1000 chars):', reviewHTML.substring(0, 1000));
+
+      // Also save to file for easier inspection
+      const htmlPath = path.join(process.cwd(), 'data', 'review-element.html');
+      await fs.writeFile(htmlPath, reviewHTML, 'utf-8');
+      console.log('Full review HTML saved to:', htmlPath);
+    }
 
     // Find the scrollable reviews container
     const reviewsContainer = page.locator('[role="main"]').first();
@@ -81,86 +237,132 @@ export async function POST(request: NextRequest) {
     const maxScrollAttempts = 50; // Limit scrolling attempts
 
     while (reviews.length < maxReviews && scrollAttempts < maxScrollAttempts) {
-      // Get all review elements currently visible
-      const reviewElements = await page.locator('[data-review-id]').all();
+      // Get count of review elements
+      const reviewElementsCount = await page.locator('[data-review-id]').count();
+      console.log(`Scroll attempt ${scrollAttempts + 1}: Found ${reviewElementsCount} total review elements in DOM, already collected ${reviews.length}`);
 
-      for (const reviewElement of reviewElements) {
+      let newReviewsInThisScroll = 0;
+
+      // Iterate by index to avoid stale element issues
+      for (let i = 0; i < reviewElementsCount; i++) {
         if (reviews.length >= maxReviews) break;
 
-        try {
-          const reviewId = await reviewElement.getAttribute('data-review-id');
-          if (!reviewId || seenReviewIds.has(reviewId)) continue;
+        // Get fresh element each time by index
+        const reviewElement = page.locator('[data-review-id]').nth(i);
 
+        // Try to get review ID with short timeout - skip if stale
+        let reviewId: string | null = null;
+        try {
+          reviewId = await reviewElement.getAttribute('data-review-id', { timeout: 1000 });
+        } catch (e) {
+          // Element is stale or not accessible, skip it silently
+          continue;
+        }
+
+        if (!reviewId || seenReviewIds.has(reviewId)) {
+          continue;
+        }
+
+        try {
+          newReviewsInThisScroll++;
           seenReviewIds.add(reviewId);
 
+          // EXTRACT IMAGES FIRST (before clicking anything that might break the DOM)
+          console.log('  Extracting images...');
+          const imageUrls: string[] = [];
+          try {
+            // More stable: button with data-photo-index attribute (not relying on random class)
+            const imageButtons = await reviewElement.locator('button[data-photo-index][data-review-id]').all();
+            console.log(`    Found ${imageButtons.length} image buttons`);
+
+            for (const btn of imageButtons) {
+              const style = await btn.getAttribute('style', { timeout: 1000 });
+              if (style) {
+                // Extract URL from background-image: url("...") or url(&quot;...&quot;)
+                let match = style.match(/url\("(.+?)"\)/);
+                if (!match) {
+                  match = style.match(/url\(&quot;(.+?)&quot;\)/);
+                }
+                if (match && match[1]) {
+                  imageUrls.push(match[1]);
+                }
+              }
+            }
+          } catch (e) {
+            console.log('  Error extracting images:', e);
+          }
+          console.log(`  Images: ${imageUrls.length}`);
+
           // Extract reviewer name
-          const reviewerName = await reviewElement.locator('[class*="author"]').first().textContent() ||
-                              await reviewElement.locator('button').first().textContent() ||
-                              'Unknown Reviewer';
+          let reviewerName = 'Unknown Reviewer';
+          try {
+            const nameElement = reviewElement.locator('button[jsaction*="reviewerLink"] div').first();
+            if (await nameElement.count() > 0) {
+              reviewerName = await nameElement.textContent({ timeout: 1000 }) || 'Unknown Reviewer';
+              reviewerName = reviewerName.split('\n')[0].trim();
+            }
+          } catch (e) {
+            // Use default
+          }
 
           // Extract star rating
           let starRating = 0;
-          const ratingElement = await reviewElement.locator('[role="img"][aria-label*="star"], [role="img"][aria-label*="Stern"]').first();
-          if (ratingElement) {
-            const ariaLabel = await ratingElement.getAttribute('aria-label') || '';
-            const match = ariaLabel.match(/(\d+)/);
-            if (match) starRating = parseInt(match[1]);
+          try {
+            const ratingElement = reviewElement.locator('[role="img"][aria-label*="star"], [role="img"][aria-label*="Stern"]').first();
+            if (await ratingElement.count() > 0) {
+              const ariaLabel = await ratingElement.getAttribute('aria-label', { timeout: 1000 }) || '';
+              const match = ariaLabel.match(/(\d+)/);
+              if (match) starRating = parseInt(match[1]);
+            }
+          } catch (e) {
+            // Default to 0
           }
 
           // Extract date
-          const dateElement = await reviewElement.locator('[class*="date"], span:has-text("ago"), span:has-text("vor")').first();
-          const date = await dateElement.textContent() || 'Unknown date';
+          let date = 'Unknown date';
+          try {
+            const dateElement = reviewElement.locator('[class*="date"], span:has-text("ago"), span:has-text("vor")').first();
+            date = await dateElement.textContent({ timeout: 1000 }) || 'Unknown date';
+          } catch (e) {
+            // Use default
+          }
 
-          // Check if review has "See original" / "Original anzeigen" button (indicates translation)
+          // Check for translation
           let isTranslated = false;
           let originalLanguage: string | undefined;
-
-          const originalButton = reviewElement.locator('button:has-text("See original"), button:has-text("Original anzeigen")');
-          if (await originalButton.count() > 0) {
-            isTranslated = true;
-            // Try to click to see original
-            try {
-              await originalButton.first().click();
-              await page.waitForTimeout(1000); // Wait for content to update
-
-              // Try to detect language from button text
-              const buttonText = await originalButton.first().textContent() || '';
-              if (buttonText.includes('Translated')) {
-                const langMatch = buttonText.match(/Translated by Google.*from (\w+)/i);
-                if (langMatch) originalLanguage = langMatch[1];
-              }
-            } catch (e) {
-              console.log('Could not click original button');
+          try {
+            const originalButton = reviewElement.locator('button:has-text("See original"), button:has-text("Original anzeigen")');
+            if (await originalButton.count() > 0) {
+              isTranslated = true;
             }
+          } catch (e) {
+            // Not translated
           }
 
-          // Extract review text
-          const reviewTextElement = await reviewElement.locator('[class*="review-text"], [class*="description"], span[jsan]').first();
-          let reviewText = await reviewTextElement.textContent() || '';
-          reviewText = reviewText.trim();
-
-          // Expand "More" if available
-          const moreButton = reviewElement.locator('button:has-text("More"), button:has-text("Mehr")');
-          if (await moreButton.count() > 0) {
-            try {
-              await moreButton.first().click();
-              await page.waitForTimeout(500);
-              const expandedText = await reviewTextElement.textContent() || '';
-              reviewText = expandedText.trim();
-            } catch (e) {
-              console.log('Could not expand review text');
+          // Extract review text - expand if needed
+          let reviewText = '';
+          try {
+            // Try to expand first
+            const moreButton = reviewElement.locator('button[jsaction*="expandReview"]');
+            if (await moreButton.count() > 0) {
+              await moreButton.first().click({ timeout: 1000 });
+              await page.waitForTimeout(300); // Quick wait for expansion
             }
+          } catch (e) {
+            // No expansion needed
           }
 
-          // Extract image URLs
-          const imageUrls: string[] = [];
-          const images = await reviewElement.locator('img[src*="googleusercontent"], img[src*="gstatic"]').all();
-          for (const img of images) {
-            const src = await img.getAttribute('src');
-            if (src && !src.includes('profile') && !src.includes('avatar')) {
-              imageUrls.push(src);
+          try {
+            const reviewTextElement = reviewElement.locator(`div[id="${reviewId}"][lang]`).first();
+            if (await reviewTextElement.count() > 0) {
+              reviewText = await reviewTextElement.textContent({ timeout: 1000 }) || '';
+              reviewText = reviewText.trim().replace(/\s*Mehr\s*$/, '').trim();
             }
+          } catch (e) {
+            // No text
           }
+
+          console.log(`  ${reviewerName} | ${starRating}★ | ${date} | ${reviewText.substring(0, 30)}... | ${imageUrls.length} imgs`);
 
           reviews.push({
             id: reviewId,
@@ -176,21 +378,43 @@ export async function POST(request: NextRequest) {
 
           console.log(`Collected review ${reviews.length}/${maxReviews}`);
 
-        } catch (e) {
-          console.error('Error extracting review:', e);
+        } catch (e: any) {
+          console.log(`  Skipped review ${reviewId}: ${e.message}`);
           continue;
         }
       }
 
-      // Scroll down to load more reviews
-      await reviewsContainer.evaluate((el) => {
-        el.scrollTop = el.scrollHeight;
-      });
+      console.log(`Collected ${newReviewsInThisScroll} new reviews in this scroll`);
 
-      // Throttle: wait 3-5 seconds between scrolls
-      const delay = 3000 + Math.random() * 2000;
-      console.log(`Waiting ${Math.round(delay)}ms before next scroll...`);
-      await page.waitForTimeout(delay);
+      // If we didn't find any new reviews, we've probably reached the end
+      if (newReviewsInThisScroll === 0 && scrollAttempts > 0) {
+        console.log('No new reviews found, reached the end');
+        break;
+      }
+
+      // Only scroll and wait if we need more reviews
+      if (reviews.length < maxReviews) {
+        console.log(`Need more reviews (${reviews.length}/${maxReviews}), scrolling...`);
+
+        // Try to find and scroll the reviews feed container
+        try {
+          // Scroll the main container multiple times to load more
+          await reviewsContainer.evaluate((el) => {
+            el.scrollTop = el.scrollHeight;
+          });
+          await page.waitForTimeout(500);
+
+          // Scroll again for good measure
+          await reviewsContainer.evaluate((el) => {
+            el.scrollTop = el.scrollHeight;
+          });
+        } catch (e) {
+          console.log('Could not scroll container');
+        }
+
+        // Wait for new reviews to load
+        await page.waitForTimeout(2000);
+      }
 
       scrollAttempts++;
     }
