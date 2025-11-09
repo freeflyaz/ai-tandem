@@ -4,7 +4,7 @@ A mobile-friendly Next.js app that generates personalized reviews for Alpentande
 
 ## Setup Instructions
 
-### 1. Install Dependencies
+#### 1. Install Dependencies
 
 ```bash
 npm install
