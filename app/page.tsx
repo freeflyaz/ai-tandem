@@ -19,12 +19,20 @@ export default function Home() {
             <div className="max-w-4xl mx-auto px-4 py-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">AI Tandem Tools</h2>
-                <Link
-                  href="/weather"
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-                >
-                  🪂 Weather Forecast
-                </Link>
+                <div className="flex gap-2">
+                  <Link
+                    href="/reviews"
+                    className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 transition-colors"
+                  >
+                    ⭐ Reviews Dashboard
+                  </Link>
+                  <Link
+                    href="/weather"
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+                  >
+                    🪂 Weather Forecast
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
