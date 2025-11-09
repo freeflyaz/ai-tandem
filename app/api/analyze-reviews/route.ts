@@ -29,6 +29,12 @@ interface TopicsMentioned {
   issuesProblems: boolean;
 }
 
+interface PilotMention {
+  pilotName: string;
+  rating: number;
+  confidence: 'high' | 'medium' | 'low';
+}
+
 interface ReviewAnalysis {
   reviewId: string;
   sentimentScores: SentimentScores;
@@ -38,11 +44,21 @@ interface ReviewAnalysis {
   hiddenCosts: string[];
   suggestions: string[];
   keyWords: string[];
+  pilots: PilotMention[];  // ADD PILOTS BACK
   analyzedAt: string;
 }
 
 interface AnalysisCache {
   [reviewId: string]: ReviewAnalysis;
+}
+
+interface PilotStats {
+  [pilotName: string]: {
+    totalMentions: number;
+    ratings: number[];
+    averageRating: number;
+    reviews: string[];
+  };
 }
 
 interface AggregatedAnalytics {
@@ -59,6 +75,7 @@ interface AggregatedAnalytics {
   commonHiddenCosts: string[];
   improvementSuggestions: string[];
   wordCloud: Array<{ word: string; frequency: number }>;
+  pilotStats: PilotStats;  // ADD PILOT STATS
 }
 
 export async function POST(request: NextRequest) {
@@ -101,7 +118,7 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`Analyzing review ${analyzedCount + 1}/${reviewsToAnalyze.length}`);
 
-        const prompt = `Analyze this review and extract standardized data. Review details:
+        const prompt = `Analyze this review and extract standardized data + pilot information. Review details:
 
 Reviewer: ${review.reviewerName}
 Star Rating: ${review.starRating}/5
@@ -127,7 +144,11 @@ Extract the following (respond ONLY with valid JSON, no other text):
   "concerns": ["concern 1", "concern 2"],
   "hiddenCosts": ["any unexpected costs mentioned"],
   "suggestions": ["improvements suggested"],
-  "keyWords": ["important", "words", "from", "review"]
+  "keyWords": ["important", "words", "from", "review"],
+  "pilots": [
+    {"pilotName": "Name", "rating": 5, "confidence": "high"},
+    {"pilotName": "Name2", "rating": 4, "confidence": "medium"}
+  ]
 }
 
 Guidelines:
@@ -137,7 +158,8 @@ Guidelines:
 - Extract any concerns/negatives mentioned
 - List any hidden/unexpected costs mentioned
 - Extract improvement suggestions if any
-- Extract 5-10 most significant words (exclude common words like "the", "was", "very")`;
+- Extract 5-10 most significant words (exclude common words like "the", "was", "very")
+- PILOTS: Extract any pilot/instructor/guide names mentioned. If mentioned positively, infer high rating (4-5). If negative, infer low (1-3). If neutral, use overall rating. Return empty array if no pilots mentioned.`;
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -161,7 +183,7 @@ Guidelines:
               }
             ],
             temperature: 0.1,
-            max_tokens: 500
+            max_tokens: 600  // Increased for pilot extraction
           }),
           signal: controller.signal
         });
@@ -206,7 +228,8 @@ Guidelines:
               concerns: [],
               hiddenCosts: [],
               suggestions: [],
-              keyWords: []
+              keyWords: [],
+              pilots: []
             };
           }
         }
@@ -221,6 +244,7 @@ Guidelines:
           hiddenCosts: parsedResult.hiddenCosts || [],
           suggestions: parsedResult.suggestions || [],
           keyWords: parsedResult.keyWords || [],
+          pilots: parsedResult.pilots || [],  // ADD PILOTS
           analyzedAt: new Date().toISOString()
         };
 
@@ -255,6 +279,7 @@ Guidelines:
           hiddenCosts: [],
           suggestions: [],
           keyWords: [],
+          pilots: [],  // ADD PILOTS
           analyzedAt: new Date().toISOString()
         };
       }
@@ -263,7 +288,7 @@ Guidelines:
     // Save updated cache
     await fs.writeFile(cachePath, JSON.stringify(cache, null, 2), 'utf-8');
 
-    // Aggregate analytics
+    // Aggregate analytics (includes pilot stats)
     const aggregated = aggregateAnalytics(cache);
 
     return NextResponse.json({
@@ -307,7 +332,7 @@ export async function GET() {
     const cacheContent = await fs.readFile(cachePath, 'utf-8');
     const cache = JSON.parse(cacheContent);
 
-    // Aggregate analytics
+    // Aggregate analytics (includes pilot stats)
     const aggregated = aggregateAnalytics(cache);
 
     return NextResponse.json({
@@ -353,7 +378,8 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
       topConcerns: [],
       commonHiddenCosts: [],
       improvementSuggestions: [],
-      wordCloud: []
+      wordCloud: [],
+      pilotStats: {}
     };
   }
 
@@ -378,6 +404,9 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
   const wordCounts: { [word: string]: number } = {};
   const allHiddenCosts: string[] = [];
   const allSuggestions: string[] = [];
+
+  // ADD PILOT AGGREGATION
+  const pilotStats: PilotStats = {};
 
   analyses.forEach(analysis => {
     // Sum sentiment scores
@@ -411,6 +440,23 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
     // Collect hidden costs and suggestions
     allHiddenCosts.push(...(analysis.hiddenCosts || []));
     allSuggestions.push(...(analysis.suggestions || []));
+
+    // AGGREGATE PILOTS
+    analysis.pilots?.forEach(pilot => {
+      const name = pilot.pilotName;
+      if (!pilotStats[name]) {
+        pilotStats[name] = {
+          totalMentions: 0,
+          ratings: [],
+          averageRating: 0,
+          reviews: []
+        };
+      }
+
+      pilotStats[name].totalMentions++;
+      pilotStats[name].ratings.push(pilot.rating);
+      pilotStats[name].reviews.push(analysis.reviewId);
+    });
   });
 
   // Calculate averages
@@ -442,6 +488,12 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
   const commonHiddenCosts = [...new Set(allHiddenCosts)].slice(0, 10);
   const improvementSuggestions = [...new Set(allSuggestions)].slice(0, 10);
 
+  // Calculate pilot average ratings
+  Object.keys(pilotStats).forEach(name => {
+    const stats = pilotStats[name];
+    stats.averageRating = stats.ratings.reduce((a, b) => a + b, 0) / stats.ratings.length;
+  });
+
   return {
     averageSentimentScores,
     topicFrequency: {
@@ -455,6 +507,7 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
     topConcerns,
     commonHiddenCosts,
     improvementSuggestions,
-    wordCloud
+    wordCloud,
+    pilotStats  // ADD PILOT STATS TO RETURN
   };
 }

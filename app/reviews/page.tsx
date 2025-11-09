@@ -31,6 +31,15 @@ interface SentimentScores {
   staffServiceQuality: number;
 }
 
+interface PilotStats {
+  [pilotName: string]: {
+    totalMentions: number;
+    ratings: number[];
+    averageRating: number;
+    reviews: string[];
+  };
+}
+
 interface AggregatedAnalytics {
   averageSentimentScores: SentimentScores;
   topicFrequency: {
@@ -45,6 +54,7 @@ interface AggregatedAnalytics {
   commonHiddenCosts: string[];
   improvementSuggestions: string[];
   wordCloud: Array<{ word: string; frequency: number }>;
+  pilotStats: PilotStats;
 }
 
 export default function ReviewsDashboard() {
@@ -304,7 +314,7 @@ export default function ReviewsDashboard() {
             </div>
 
             <p className="text-sm text-gray-500 mt-2">
-              Use "Analyze New Reviews" to only process uncached reviews, or "Re-analyze ALL" to force re-process everything (useful for testing)
+              Use &quot;Analyze New Reviews&quot; to only process uncached reviews, or &quot;Re-analyze ALL&quot; to force re-process everything (useful for testing)
             </p>
           </div>
         )}
@@ -509,6 +519,43 @@ export default function ReviewsDashboard() {
                   </span>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Pilot Stats */}
+        {analytics && analytics.pilotStats && Object.keys(analytics.pilotStats).length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Pilot / Staff Ratings
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Individual ratings for pilots, instructors, or staff members mentioned in reviews
+            </p>
+            <div className="space-y-3">
+              {Object.entries(analytics.pilotStats)
+                .sort((a, b) => b[1].averageRating - a[1].averageRating)
+                .map(([name, stats]) => (
+                  <div
+                    key={name}
+                    className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <div>
+                      <div className="font-semibold text-gray-900 text-lg">{name}</div>
+                      <div className="text-sm text-gray-600">
+                        {stats.totalMentions} mention{stats.totalMentions !== 1 ? 's' : ''} across {stats.reviews.length} review{stats.reviews.length !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-900">
+                        {stats.averageRating.toFixed(1)} ⭐
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {stats.ratings.join(', ')}
+                      </div>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
         )}
