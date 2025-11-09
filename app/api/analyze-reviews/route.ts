@@ -33,6 +33,9 @@ interface PilotMention {
   pilotName: string;
   rating: number;
   confidence: 'high' | 'medium' | 'low';
+  sentimentScores: SentimentScores;  // Per-pilot sentiment scores
+  positiveHighlights: string[];  // Specific to this pilot
+  concerns: string[];  // Specific to this pilot
 }
 
 interface ReviewAnalysis {
@@ -44,7 +47,7 @@ interface ReviewAnalysis {
   hiddenCosts: string[];
   suggestions: string[];
   keyWords: string[];
-  pilots: PilotMention[];  // ADD PILOTS BACK
+  pilots: PilotMention[];
   analyzedAt: string;
 }
 
@@ -58,6 +61,9 @@ interface PilotStats {
     ratings: number[];
     averageRating: number;
     reviews: string[];
+    averageSentimentScores: SentimentScores;  // Average across all mentions
+    topPositiveHighlights: Array<{ phrase: string; count: number }>;  // Most common highlights
+    topConcerns: Array<{ concern: string; count: number }>;  // Most common concerns
   };
 }
 
@@ -75,7 +81,7 @@ interface AggregatedAnalytics {
   commonHiddenCosts: string[];
   improvementSuggestions: string[];
   wordCloud: Array<{ word: string; frequency: number }>;
-  pilotStats: PilotStats;  // ADD PILOT STATS
+  pilotStats: PilotStats;
 }
 
 export async function POST(request: NextRequest) {
@@ -118,7 +124,7 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`Analyzing review ${analyzedCount + 1}/${reviewsToAnalyze.length}`);
 
-        const prompt = `Analyze this review and extract standardized data + pilot information. Review details:
+        const prompt = `Analyze this review and extract standardized data + detailed pilot information. Review details:
 
 Reviewer: ${review.reviewerName}
 Star Rating: ${review.starRating}/5
@@ -146,8 +152,19 @@ Extract the following (respond ONLY with valid JSON, no other text):
   "suggestions": ["improvements suggested"],
   "keyWords": ["important", "words", "from", "review"],
   "pilots": [
-    {"pilotName": "Name", "rating": 5, "confidence": "high"},
-    {"pilotName": "Name2", "rating": 4, "confidence": "medium"}
+    {
+      "pilotName": "Name",
+      "rating": 5,
+      "confidence": "high",
+      "sentimentScores": {
+        "overallExperience": 95,
+        "safetyProfessionalism": 100,
+        "valueForMoney": 90,
+        "staffServiceQuality": 95
+      },
+      "positiveHighlights": ["very professional", "made me feel safe"],
+      "concerns": []
+    }
   ]
 }
 
@@ -158,8 +175,18 @@ Guidelines:
 - Extract any concerns/negatives mentioned
 - List any hidden/unexpected costs mentioned
 - Extract improvement suggestions if any
-- Extract 5-10 most significant words (exclude common words like "the", "was", "very")
-- PILOTS: Extract any pilot/instructor/guide names mentioned. If mentioned positively, infer high rating (4-5). If negative, infer low (1-3). If neutral, use overall rating. Return empty array if no pilots mentioned.`;
+- Extract 5-10 most significant words (exclude common words)
+
+PILOTS (DETAILED):
+- Extract ANY pilot/instructor/guide/staff names mentioned
+- For EACH pilot, provide:
+  - rating: Overall rating (1-5) based on how they're described
+  - confidence: "high" if clearly named, "medium" if somewhat clear, "low" if uncertain
+  - sentimentScores: Individual scores for this specific pilot based on what's said about them
+  - positiveHighlights: Specific positive things said about THIS pilot (2-5 phrases)
+  - concerns: Specific concerns/negatives about THIS pilot (if any)
+- If no pilots mentioned, return empty array
+- If pilot mentioned but no specific details, still provide best-guess sentiment scores based on overall tone`;
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -183,7 +210,7 @@ Guidelines:
               }
             ],
             temperature: 0.1,
-            max_tokens: 600  // Increased for pilot extraction
+            max_tokens: 800  // Increased for detailed pilot data
           }),
           signal: controller.signal
         });
@@ -244,7 +271,7 @@ Guidelines:
           hiddenCosts: parsedResult.hiddenCosts || [],
           suggestions: parsedResult.suggestions || [],
           keyWords: parsedResult.keyWords || [],
-          pilots: parsedResult.pilots || [],  // ADD PILOTS
+          pilots: parsedResult.pilots || [],
           analyzedAt: new Date().toISOString()
         };
 
@@ -279,7 +306,7 @@ Guidelines:
           hiddenCosts: [],
           suggestions: [],
           keyWords: [],
-          pilots: [],  // ADD PILOTS
+          pilots: [],
           analyzedAt: new Date().toISOString()
         };
       }
@@ -288,7 +315,7 @@ Guidelines:
     // Save updated cache
     await fs.writeFile(cachePath, JSON.stringify(cache, null, 2), 'utf-8');
 
-    // Aggregate analytics (includes pilot stats)
+    // Aggregate analytics (includes detailed pilot stats)
     const aggregated = aggregateAnalytics(cache);
 
     return NextResponse.json({
@@ -332,7 +359,7 @@ export async function GET() {
     const cacheContent = await fs.readFile(cachePath, 'utf-8');
     const cache = JSON.parse(cacheContent);
 
-    // Aggregate analytics (includes pilot stats)
+    // Aggregate analytics (includes detailed pilot stats)
     const aggregated = aggregateAnalytics(cache);
 
     return NextResponse.json({
@@ -405,7 +432,7 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
   const allHiddenCosts: string[] = [];
   const allSuggestions: string[] = [];
 
-  // ADD PILOT AGGREGATION
+  // DETAILED PILOT AGGREGATION
   const pilotStats: PilotStats = {};
 
   analyses.forEach(analysis => {
@@ -441,7 +468,7 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
     allHiddenCosts.push(...(analysis.hiddenCosts || []));
     allSuggestions.push(...(analysis.suggestions || []));
 
-    // AGGREGATE PILOTS
+    // AGGREGATE DETAILED PILOT DATA
     analysis.pilots?.forEach(pilot => {
       const name = pilot.pilotName;
       if (!pilotStats[name]) {
@@ -449,13 +476,29 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
           totalMentions: 0,
           ratings: [],
           averageRating: 0,
-          reviews: []
+          reviews: [],
+          averageSentimentScores: {
+            overallExperience: 0,
+            safetyProfessionalism: 0,
+            valueForMoney: 0,
+            staffServiceQuality: 0
+          },
+          topPositiveHighlights: [],
+          topConcerns: []
         };
       }
 
       pilotStats[name].totalMentions++;
       pilotStats[name].ratings.push(pilot.rating);
       pilotStats[name].reviews.push(analysis.reviewId);
+
+      // Accumulate sentiment scores for averaging
+      if (pilot.sentimentScores) {
+        pilotStats[name].averageSentimentScores.overallExperience += pilot.sentimentScores.overallExperience || 0;
+        pilotStats[name].averageSentimentScores.safetyProfessionalism += pilot.sentimentScores.safetyProfessionalism || 0;
+        pilotStats[name].averageSentimentScores.valueForMoney += pilot.sentimentScores.valueForMoney || 0;
+        pilotStats[name].averageSentimentScores.staffServiceQuality += pilot.sentimentScores.staffServiceQuality || 0;
+      }
     });
   });
 
@@ -488,10 +531,48 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
   const commonHiddenCosts = [...new Set(allHiddenCosts)].slice(0, 10);
   const improvementSuggestions = [...new Set(allSuggestions)].slice(0, 10);
 
-  // Calculate pilot average ratings
+  // Calculate pilot averages and aggregate highlights/concerns
   Object.keys(pilotStats).forEach(name => {
     const stats = pilotStats[name];
+    const mentionCount = stats.totalMentions;
+
+    // Average rating
     stats.averageRating = stats.ratings.reduce((a, b) => a + b, 0) / stats.ratings.length;
+
+    // Average sentiment scores
+    stats.averageSentimentScores = {
+      overallExperience: Math.round(stats.averageSentimentScores.overallExperience / mentionCount),
+      safetyProfessionalism: Math.round(stats.averageSentimentScores.safetyProfessionalism / mentionCount),
+      valueForMoney: Math.round(stats.averageSentimentScores.valueForMoney / mentionCount),
+      staffServiceQuality: Math.round(stats.averageSentimentScores.staffServiceQuality / mentionCount)
+    };
+
+    // Aggregate pilot-specific highlights and concerns
+    const pilotHighlightCounts: { [phrase: string]: number } = {};
+    const pilotConcernCounts: { [concern: string]: number } = {};
+
+    analyses.forEach(analysis => {
+      analysis.pilots?.forEach(pilot => {
+        if (pilot.pilotName === name) {
+          pilot.positiveHighlights?.forEach(phrase => {
+            pilotHighlightCounts[phrase] = (pilotHighlightCounts[phrase] || 0) + 1;
+          });
+          pilot.concerns?.forEach(concern => {
+            pilotConcernCounts[concern] = (pilotConcernCounts[concern] || 0) + 1;
+          });
+        }
+      });
+    });
+
+    stats.topPositiveHighlights = Object.entries(pilotHighlightCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([phrase, count]) => ({ phrase, count }));
+
+    stats.topConcerns = Object.entries(pilotConcernCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([concern, count]) => ({ concern, count }));
   });
 
   return {
@@ -508,6 +589,6 @@ function aggregateAnalytics(cache: AnalysisCache): AggregatedAnalytics {
     commonHiddenCosts,
     improvementSuggestions,
     wordCloud,
-    pilotStats  // ADD PILOT STATS TO RETURN
+    pilotStats
   };
 }

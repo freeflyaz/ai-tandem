@@ -37,6 +37,9 @@ interface PilotStats {
     ratings: number[];
     averageRating: number;
     reviews: string[];
+    averageSentimentScores: SentimentScores;
+    topPositiveHighlights: Array<{ phrase: string; count: number }>;
+    topConcerns: Array<{ concern: string; count: number }>;
   };
 }
 
@@ -67,6 +70,7 @@ export default function ReviewsDashboard() {
   const [message, setMessage] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [filterRating, setFilterRating] = useState<number | 'all'>('all');
+  const [expandedPilots, setExpandedPilots] = useState<Set<string>>(new Set());
 
   // Load existing data on mount
   useEffect(() => {
@@ -174,6 +178,19 @@ export default function ReviewsDashboard() {
 
   // Calculate total analyzed reviews
   const totalAnalyzed = scrapedData?.reviews.length || 0;
+
+  // Toggle pilot expansion
+  const togglePilot = (pilotName: string) => {
+    setExpandedPilots(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(pilotName)) {
+        newSet.delete(pilotName);
+      } else {
+        newSet.add(pilotName);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 p-4 md:p-8">
@@ -530,32 +547,152 @@ export default function ReviewsDashboard() {
               Pilot / Staff Ratings
             </h2>
             <p className="text-gray-600 mb-4">
-              Individual ratings for pilots, instructors, or staff members mentioned in reviews
+              Individual ratings for pilots, instructors, or staff members mentioned in reviews. Click to view detailed analytics.
             </p>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {Object.entries(analytics.pilotStats)
                 .sort((a, b) => b[1].averageRating - a[1].averageRating)
-                .map(([name, stats]) => (
-                  <div
-                    key={name}
-                    className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg hover:shadow-md transition-shadow"
-                  >
-                    <div>
-                      <div className="font-semibold text-gray-900 text-lg">{name}</div>
-                      <div className="text-sm text-gray-600">
-                        {stats.totalMentions} mention{stats.totalMentions !== 1 ? 's' : ''} across {stats.reviews.length} review{stats.reviews.length !== 1 ? 's' : ''}
+                .map(([name, stats]) => {
+                  const isExpanded = expandedPilots.has(name);
+                  return (
+                    <div
+                      key={name}
+                      className="border border-gray-200 rounded-lg overflow-hidden"
+                    >
+                      {/* Pilot Header - Clickable */}
+                      <div
+                        onClick={() => togglePilot(name)}
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 hover:shadow-md transition-shadow cursor-pointer"
+                      >
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900 text-lg">{name}</div>
+                          <div className="text-sm text-gray-600">
+                            {stats.totalMentions} mention{stats.totalMentions !== 1 ? 's' : ''} across {stats.reviews.length} review{stats.reviews.length !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-3xl font-bold text-gray-900">
+                              {stats.averageRating.toFixed(1)} ⭐
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {stats.ratings.join(', ')}
+                            </div>
+                          </div>
+                          <div className="text-2xl text-gray-400">
+                            {isExpanded ? '▼' : '▶'}
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Expanded Details */}
+                      {isExpanded && (
+                        <div className="p-4 bg-white border-t border-gray-200">
+                          {/* Per-Pilot Sentiment Scores */}
+                          <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                              Sentiment Breakdown for {name}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">Overall Experience</span>
+                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.overallExperience}/100</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.overallExperience}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">Safety & Professionalism</span>
+                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.safetyProfessionalism}/100</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.safetyProfessionalism}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">Value for Money</span>
+                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.valueForMoney}/100</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.valueForMoney}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">Service Quality</span>
+                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.staffServiceQuality}/100</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.staffServiceQuality}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Per-Pilot Highlights and Concerns */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Positive Highlights */}
+                            <div>
+                              <h3 className="text-md font-semibold text-gray-800 mb-2">
+                                Top Positive Highlights
+                              </h3>
+                              {stats.topPositiveHighlights && stats.topPositiveHighlights.length > 0 ? (
+                                <div className="space-y-2">
+                                  {stats.topPositiveHighlights.slice(0, 5).map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                                      <span className="text-sm text-gray-800">{item.phrase}</span>
+                                      <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold">{item.count}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500 italic">No specific highlights extracted</p>
+                              )}
+                            </div>
+
+                            {/* Concerns */}
+                            <div>
+                              <h3 className="text-md font-semibold text-gray-800 mb-2">
+                                Concerns
+                              </h3>
+                              {stats.topConcerns && stats.topConcerns.length > 0 ? (
+                                <div className="space-y-2">
+                                  {stats.topConcerns.slice(0, 5).map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                                      <span className="text-sm text-gray-800">{item.concern}</span>
+                                      <span className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold">{item.count}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500 italic">No specific concerns found</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-900">
-                        {stats.averageRating.toFixed(1)} ⭐
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {stats.ratings.join(', ')}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           </div>
         )}
