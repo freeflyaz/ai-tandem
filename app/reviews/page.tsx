@@ -119,20 +119,23 @@ export default function ReviewsDashboard() {
     }
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = async (forceReanalyze: boolean = false) => {
     if (!scrapedData) {
       setMessage('No reviews to analyze. Scrape reviews first.');
       return;
     }
 
     setAnalyzing(true);
-    setMessage('Analyzing reviews with AI... This may take a few minutes.');
+    setMessage(forceReanalyze
+      ? 'Re-analyzing ALL reviews with AI... This may take a few minutes.'
+      : 'Analyzing reviews with AI... This may take a few minutes.'
+    );
 
     try {
       const response = await fetch('/api/analyze-reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analyzeAll: false })
+        body: JSON.stringify({ analyzeAll: forceReanalyze })
       });
 
       const result = await response.json();
@@ -282,13 +285,27 @@ export default function ReviewsDashboard() {
               Extract sentiment scores, key topics, highlights, concerns, and actionable insights from reviews
             </p>
 
-            <button
-              onClick={handleAnalyze}
-              disabled={analyzing}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
-              {analyzing ? 'Analyzing...' : 'Analyze New Reviews with AI'}
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={() => handleAnalyze(false)}
+                disabled={analyzing}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                {analyzing ? 'Analyzing...' : 'Analyze New Reviews'}
+              </button>
+
+              <button
+                onClick={() => handleAnalyze(true)}
+                disabled={analyzing}
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                {analyzing ? 'Analyzing...' : 'Re-analyze ALL Reviews'}
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500 mt-2">
+              Use "Analyze New Reviews" to only process uncached reviews, or "Re-analyze ALL" to force re-process everything (useful for testing)
+            </p>
           </div>
         )}
 
