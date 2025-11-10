@@ -193,33 +193,39 @@ export default function ReviewsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: '#f5f7fb' }}>
+      <div className="mx-auto" style={{ maxWidth: '1440px' }}>
         {/* Header */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '24px' }}>
           <Link
             href="/"
-            className="inline-block mb-4 text-blue-600 hover:text-blue-800 font-medium"
+            className="inline-block font-medium"
+            style={{ marginBottom: '16px', color: '#4a6cf7' }}
           >
             ← Back to Home
           </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#202233', marginBottom: '8px' }}>
             Google Reviews Dashboard
           </h1>
-          <p className="text-gray-600">
+          <p style={{ color: '#636986' }}>
             Scrape, analyze, and explore Google Maps reviews with AI-powered insights
           </p>
         </div>
 
         {/* Scraper Form */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+        <div className="bg-white mb-6" style={{
+          border: '1px solid #dde2ec',
+          borderRadius: '12px',
+          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+          padding: '20px'
+        }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
             Scrape Reviews
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2" style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>
                 Google Maps Business URL
               </label>
               <input
@@ -227,13 +233,21 @@ export default function ReviewsDashboard() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://www.google.com/maps/place/..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full"
+                style={{
+                  height: '40px',
+                  padding: '0 12px',
+                  border: '1px solid #dde2ec',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#202233'
+                }}
                 disabled={scraping}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2" style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>
                 Max Reviews to Scrape
               </label>
               <input
@@ -242,7 +256,15 @@ export default function ReviewsDashboard() {
                 onChange={(e) => setMaxReviews(parseInt(e.target.value))}
                 min="1"
                 max="500"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full"
+                style={{
+                  height: '40px',
+                  padding: '0 12px',
+                  border: '1px solid #dde2ec',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#202233'
+                }}
                 disabled={scraping}
               />
             </div>
@@ -250,14 +272,29 @@ export default function ReviewsDashboard() {
             <button
               onClick={handleScrape}
               disabled={scraping}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              className="w-full font-semibold transition-colors"
+              style={{
+                backgroundColor: scraping ? '#a3a9bf' : '#4a6cf7',
+                color: '#ffffff',
+                padding: '8px 14px',
+                borderRadius: '6px',
+                boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)'
+              }}
+              onMouseEnter={(e) => !scraping && (e.currentTarget.style.backgroundColor = '#384fd4')}
+              onMouseLeave={(e) => !scraping && (e.currentTarget.style.backgroundColor = '#4a6cf7')}
             >
               {scraping ? 'Scraping...' : 'Start Scraping'}
             </button>
           </div>
 
           {message && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
+            <div className="mt-4" style={{
+              padding: '16px',
+              backgroundColor: '#ebf7ff',
+              border: '1px solid #9acfff',
+              borderRadius: '6px',
+              color: '#1067d4'
+            }}>
               {message}
             </div>
           )}
@@ -265,36 +302,41 @@ export default function ReviewsDashboard() {
 
         {/* Stats Overview */}
         {scrapedData && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               Overview
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
-                <div className="text-3xl font-bold">{scrapedData.reviews.length}</div>
-                <div className="text-blue-100">Reviews Scraped</div>
+              <div className="p-4 text-white" style={{ backgroundColor: '#4a6cf7', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700 }}>{scrapedData.reviews.length}</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Reviews Scraped</div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
-                <div className="text-3xl font-bold">{scrapedData.averageRating.toFixed(1)}</div>
-                <div className="text-green-100">Average Rating</div>
+              <div className="p-4 text-white" style={{ backgroundColor: '#0c9e64', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700 }}>{scrapedData.averageRating.toFixed(1)}</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Average Rating</div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
-                <div className="text-3xl font-bold">{allImages.length}</div>
-                <div className="text-purple-100">Photos</div>
+              <div className="p-4 text-white" style={{ backgroundColor: '#1985ff', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700 }}>{allImages.length}</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Photos</div>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white">
-                <div className="text-3xl font-bold">
+              <div className="p-4 text-white" style={{ backgroundColor: '#f27f00', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700 }}>
                   {analytics ? totalAnalyzed : 0}
                 </div>
-                <div className="text-orange-100">AI Analyzed</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>AI Analyzed</div>
               </div>
             </div>
 
-            <div className="mt-4 text-sm text-gray-600">
+            <div className="mt-4" style={{ fontSize: '12px', color: '#636986' }}>
               <p><strong>Business:</strong> {scrapedData.businessName}</p>
               <p><strong>Scraped:</strong> {new Date(scrapedData.scrapedAt).toLocaleString()}</p>
             </div>
@@ -303,12 +345,17 @@ export default function ReviewsDashboard() {
 
         {/* AI Analysis Button */}
         {scrapedData && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               AI-Powered Analysis
             </h2>
 
-            <p className="text-gray-600 mb-4">
+            <p style={{ color: '#636986', marginBottom: '16px', fontSize: '14px' }}>
               Extract sentiment scores, key topics, highlights, concerns, and actionable insights from reviews
             </p>
 
@@ -316,7 +363,16 @@ export default function ReviewsDashboard() {
               <button
                 onClick={() => handleAnalyze(false)}
                 disabled={analyzing}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                className="font-semibold transition-colors"
+                style={{
+                  backgroundColor: analyzing ? '#a3a9bf' : '#4a6cf7',
+                  color: '#ffffff',
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)'
+                }}
+                onMouseEnter={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#384fd4')}
+                onMouseLeave={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#4a6cf7')}
               >
                 {analyzing ? 'Analyzing...' : 'Analyze New Reviews'}
               </button>
@@ -324,13 +380,22 @@ export default function ReviewsDashboard() {
               <button
                 onClick={() => handleAnalyze(true)}
                 disabled={analyzing}
-                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                className="font-semibold transition-colors"
+                style={{
+                  backgroundColor: analyzing ? '#a3a9bf' : '#f27f00',
+                  color: '#ffffff',
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)'
+                }}
+                onMouseEnter={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#cf6700')}
+                onMouseLeave={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#f27f00')}
               >
                 {analyzing ? 'Analyzing...' : 'Re-analyze ALL Reviews'}
               </button>
             </div>
 
-            <p className="text-sm text-gray-500 mt-2">
+            <p style={{ fontSize: '12px', color: '#8087a0', marginTop: '8px' }}>
               Use &quot;Analyze New Reviews&quot; to only process uncached reviews, or &quot;Re-analyze ALL&quot; to force re-process everything (useful for testing)
             </p>
           </div>
@@ -338,60 +403,65 @@ export default function ReviewsDashboard() {
 
         {/* Sentiment Scores */}
         {analytics && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               Sentiment Scores
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Overall Experience</span>
-                  <span className="text-lg font-bold text-gray-900">{analytics.averageSentimentScores.overallExperience}/100</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Overall Experience</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#202233' }}>{analytics.averageSentimentScores.overallExperience}/100</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full rounded-full h-3" style={{ backgroundColor: '#dde2ec' }}>
                   <div
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all"
-                    style={{ width: `${analytics.averageSentimentScores.overallExperience}%` }}
+                    className="h-3 rounded-full transition-all"
+                    style={{ width: `${analytics.averageSentimentScores.overallExperience}%`, backgroundColor: '#4a6cf7' }}
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Safety & Professionalism</span>
-                  <span className="text-lg font-bold text-gray-900">{analytics.averageSentimentScores.safetyProfessionalism}/100</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Safety & Professionalism</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#202233' }}>{analytics.averageSentimentScores.safetyProfessionalism}/100</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full rounded-full h-3" style={{ backgroundColor: '#dde2ec' }}>
                   <div
-                    className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all"
-                    style={{ width: `${analytics.averageSentimentScores.safetyProfessionalism}%` }}
+                    className="h-3 rounded-full transition-all"
+                    style={{ width: `${analytics.averageSentimentScores.safetyProfessionalism}%`, backgroundColor: '#0c9e64' }}
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Value for Money</span>
-                  <span className="text-lg font-bold text-gray-900">{analytics.averageSentimentScores.valueForMoney}/100</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Value for Money</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#202233' }}>{analytics.averageSentimentScores.valueForMoney}/100</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full rounded-full h-3" style={{ backgroundColor: '#dde2ec' }}>
                   <div
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all"
-                    style={{ width: `${analytics.averageSentimentScores.valueForMoney}%` }}
+                    className="h-3 rounded-full transition-all"
+                    style={{ width: `${analytics.averageSentimentScores.valueForMoney}%`, backgroundColor: '#1985ff' }}
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Staff & Service Quality</span>
-                  <span className="text-lg font-bold text-gray-900">{analytics.averageSentimentScores.staffServiceQuality}/100</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Staff & Service Quality</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#202233' }}>{analytics.averageSentimentScores.staffServiceQuality}/100</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full rounded-full h-3" style={{ backgroundColor: '#dde2ec' }}>
                   <div
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full transition-all"
-                    style={{ width: `${analytics.averageSentimentScores.staffServiceQuality}%` }}
+                    className="h-3 rounded-full transition-all"
+                    style={{ width: `${analytics.averageSentimentScores.staffServiceQuality}%`, backgroundColor: '#f27f00' }}
                   />
                 </div>
               </div>
@@ -401,35 +471,40 @@ export default function ReviewsDashboard() {
 
         {/* Topics Mentioned */}
         {analytics && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               Key Topics Mentioned
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="bg-blue-50 rounded-lg p-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">{analytics.topicFrequency.safety}</div>
-                <div className="text-sm text-gray-600 mt-1">Safety</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#eef3ff', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{analytics.topicFrequency.safety}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Safety</div>
               </div>
 
-              <div className="bg-green-50 rounded-lg p-4 text-center">
-                <div className="text-3xl font-bold text-green-600">{analytics.topicFrequency.sceneryLocation}</div>
-                <div className="text-sm text-gray-600 mt-1">Scenery/Location</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#e7f9f1', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#0c9e64' }}>{analytics.topicFrequency.sceneryLocation}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Scenery/Location</div>
               </div>
 
-              <div className="bg-purple-50 rounded-lg p-4 text-center">
-                <div className="text-3xl font-bold text-purple-600">{analytics.topicFrequency.firstTimeExperience}</div>
-                <div className="text-sm text-gray-600 mt-1">First-Time</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#ebf7ff', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#1985ff' }}>{analytics.topicFrequency.firstTimeExperience}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>First-Time</div>
               </div>
 
-              <div className="bg-orange-50 rounded-lg p-4 text-center">
-                <div className="text-3xl font-bold text-orange-600">{analytics.topicFrequency.wouldRecommend}</div>
-                <div className="text-sm text-gray-600 mt-1">Would Recommend</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#e7f9f1', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#0c9e64' }}>{analytics.topicFrequency.wouldRecommend}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Would Recommend</div>
               </div>
 
-              <div className="bg-red-50 rounded-lg p-4 text-center">
-                <div className="text-3xl font-bold text-red-600">{analytics.topicFrequency.issuesProblems}</div>
-                <div className="text-sm text-gray-600 mt-1">Issues/Problems</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#ffecec', borderRadius: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#f13030' }}>{analytics.topicFrequency.issuesProblems}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Issues/Problems</div>
               </div>
             </div>
           </div>
@@ -439,40 +514,50 @@ export default function ReviewsDashboard() {
         {analytics && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Positive Highlights */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <div className="bg-white mb-6" style={{
+              border: '1px solid #dde2ec',
+              borderRadius: '12px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+              padding: '20px'
+            }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
                 Top Positive Highlights
               </h2>
               {analytics.topPositivePhrases.length > 0 ? (
                 <div className="space-y-2">
                   {analytics.topPositivePhrases.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <span className="text-gray-800">{item.phrase}</span>
-                      <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">{item.count}</span>
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#e7f9f1' }}>
+                      <span style={{ color: '#202233' }}>{item.phrase}</span>
+                      <span className="text-white px-3 py-1 rounded-full text-sm font-semibold" style={{ backgroundColor: '#0c9e64' }}>{item.count}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No highlights extracted yet</p>
+                <p style={{ color: '#636986' }}>No highlights extracted yet</p>
               )}
             </div>
 
             {/* Top Concerns */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <div className="bg-white mb-6" style={{
+              border: '1px solid #dde2ec',
+              borderRadius: '12px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+              padding: '20px'
+            }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
                 Top Concerns
               </h2>
               {analytics.topConcerns.length > 0 ? (
                 <div className="space-y-2">
                   {analytics.topConcerns.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                      <span className="text-gray-800">{item.concern}</span>
-                      <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold">{item.count}</span>
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#ffecec' }}>
+                      <span style={{ color: '#202233' }}>{item.concern}</span>
+                      <span className="text-white px-3 py-1 rounded-full text-sm font-semibold" style={{ backgroundColor: '#f13030' }}>{item.count}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No concerns found</p>
+                <p style={{ color: '#636986' }}>No concerns found</p>
               )}
             </div>
           </div>
@@ -480,20 +565,25 @@ export default function ReviewsDashboard() {
 
         {/* Actionable Insights */}
         {analytics && (analytics.commonHiddenCosts.length > 0 || analytics.improvementSuggestions.length > 0) && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               Actionable Insights
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {analytics.commonHiddenCosts.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Hidden Costs Mentioned</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#202233', marginBottom: '12px' }}>Hidden Costs Mentioned</h3>
                   <ul className="space-y-2">
                     {analytics.commonHiddenCosts.map((cost, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span className="text-orange-500 mr-2">💰</span>
-                        <span className="text-gray-700">{cost}</span>
+                        <span style={{ color: '#f27f00', marginRight: '8px' }}>💰</span>
+                        <span style={{ color: '#636986' }}>{cost}</span>
                       </li>
                     ))}
                   </ul>
@@ -502,12 +592,12 @@ export default function ReviewsDashboard() {
 
               {analytics.improvementSuggestions.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Improvement Suggestions</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#202233', marginBottom: '12px' }}>Improvement Suggestions</h3>
                   <ul className="space-y-2">
                     {analytics.improvementSuggestions.map((suggestion, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span className="text-blue-500 mr-2">💡</span>
-                        <span className="text-gray-700">{suggestion}</span>
+                        <span style={{ color: '#1985ff', marginRight: '8px' }}>💡</span>
+                        <span style={{ color: '#636986' }}>{suggestion}</span>
                       </li>
                     ))}
                   </ul>
@@ -519,8 +609,13 @@ export default function ReviewsDashboard() {
 
         {/* Word Cloud */}
         {analytics && analytics.wordCloud.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               Most Mentioned Words
             </h2>
             <div className="flex flex-wrap gap-3">
@@ -529,8 +624,12 @@ export default function ReviewsDashboard() {
                 return (
                   <span
                     key={idx}
-                    className="inline-block px-3 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg text-gray-800 font-medium"
-                    style={{ fontSize: `${size}px` }}
+                    className="inline-block px-3 py-2 rounded-lg font-medium"
+                    style={{
+                      fontSize: `${size}px`,
+                      backgroundColor: '#eef3ff',
+                      color: '#4a6cf7'
+                    }}
                   >
                     {item.word} ({item.frequency})
                   </span>
@@ -542,11 +641,16 @@ export default function ReviewsDashboard() {
 
         {/* Pilot Stats */}
         {analytics && analytics.pilotStats && Object.keys(analytics.pilotStats).length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               Pilot / Staff Ratings
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p style={{ color: '#636986', marginBottom: '16px', fontSize: '14px' }}>
               Individual ratings for pilots, instructors, or staff members mentioned in reviews. Click to view detailed analytics.
             </p>
             <div className="space-y-4">
@@ -557,29 +661,30 @@ export default function ReviewsDashboard() {
                   return (
                     <div
                       key={name}
-                      className="border border-gray-200 rounded-lg overflow-hidden"
+                      style={{ border: '1px solid #dde2ec', borderRadius: '8px', overflow: 'hidden' }}
                     >
                       {/* Pilot Header - Clickable */}
                       <div
                         onClick={() => togglePilot(name)}
-                        className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 hover:shadow-md transition-shadow cursor-pointer"
+                        className="flex items-center justify-between p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        style={{ backgroundColor: '#f5f7fb' }}
                       >
                         <div className="flex-1">
-                          <div className="font-semibold text-gray-900 text-lg">{name}</div>
-                          <div className="text-sm text-gray-600">
+                          <div style={{ fontWeight: 600, color: '#202233', fontSize: '16px' }}>{name}</div>
+                          <div style={{ fontSize: '14px', color: '#636986' }}>
                             {stats.totalMentions} mention{stats.totalMentions !== 1 ? 's' : ''} across {stats.reviews.length} review{stats.reviews.length !== 1 ? 's' : ''}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div className="text-3xl font-bold text-gray-900">
+                            <div style={{ fontSize: '24px', fontWeight: 700, color: '#202233' }}>
                               {stats.averageRating.toFixed(1)} ⭐
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div style={{ fontSize: '12px', color: '#8087a0' }}>
                               {stats.ratings.join(', ')}
                             </div>
                           </div>
-                          <div className="text-2xl text-gray-400">
+                          <div style={{ fontSize: '20px', color: '#8087a0' }}>
                             {isExpanded ? '▼' : '▶'}
                           </div>
                         </div>
@@ -587,61 +692,61 @@ export default function ReviewsDashboard() {
 
                       {/* Expanded Details */}
                       {isExpanded && (
-                        <div className="p-4 bg-white border-t border-gray-200">
+                        <div className="p-4 bg-white" style={{ borderTop: '1px solid #dde2ec' }}>
                           {/* Per-Pilot Sentiment Scores */}
                           <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#202233', marginBottom: '12px' }}>
                               Sentiment Breakdown for {name}
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-sm font-medium text-gray-700">Overall Experience</span>
-                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.overallExperience}/100</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Overall Experience</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#202233' }}>{stats.averageSentimentScores.overallExperience}/100</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full rounded-full h-2" style={{ backgroundColor: '#dde2ec' }}>
                                   <div
-                                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
-                                    style={{ width: `${stats.averageSentimentScores.overallExperience}%` }}
+                                    className="h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.overallExperience}%`, backgroundColor: '#4a6cf7' }}
                                   />
                                 </div>
                               </div>
 
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-sm font-medium text-gray-700">Safety & Professionalism</span>
-                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.safetyProfessionalism}/100</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Safety & Professionalism</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#202233' }}>{stats.averageSentimentScores.safetyProfessionalism}/100</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full rounded-full h-2" style={{ backgroundColor: '#dde2ec' }}>
                                   <div
-                                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full"
-                                    style={{ width: `${stats.averageSentimentScores.safetyProfessionalism}%` }}
+                                    className="h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.safetyProfessionalism}%`, backgroundColor: '#0c9e64' }}
                                   />
                                 </div>
                               </div>
 
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-sm font-medium text-gray-700">Value for Money</span>
-                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.valueForMoney}/100</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Value for Money</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#202233' }}>{stats.averageSentimentScores.valueForMoney}/100</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full rounded-full h-2" style={{ backgroundColor: '#dde2ec' }}>
                                   <div
-                                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full"
-                                    style={{ width: `${stats.averageSentimentScores.valueForMoney}%` }}
+                                    className="h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.valueForMoney}%`, backgroundColor: '#1985ff' }}
                                   />
                                 </div>
                               </div>
 
                               <div>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-sm font-medium text-gray-700">Service Quality</span>
-                                  <span className="text-sm font-bold text-gray-900">{stats.averageSentimentScores.staffServiceQuality}/100</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#636986' }}>Service Quality</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#202233' }}>{stats.averageSentimentScores.staffServiceQuality}/100</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full rounded-full h-2" style={{ backgroundColor: '#dde2ec' }}>
                                   <div
-                                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full"
-                                    style={{ width: `${stats.averageSentimentScores.staffServiceQuality}%` }}
+                                    className="h-2 rounded-full"
+                                    style={{ width: `${stats.averageSentimentScores.staffServiceQuality}%`, backgroundColor: '#f27f00' }}
                                   />
                                 </div>
                               </div>
@@ -652,39 +757,39 @@ export default function ReviewsDashboard() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Positive Highlights */}
                             <div>
-                              <h3 className="text-md font-semibold text-gray-800 mb-2">
+                              <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#202233', marginBottom: '8px' }}>
                                 Top Positive Highlights
                               </h3>
                               {stats.topPositiveHighlights && stats.topPositiveHighlights.length > 0 ? (
                                 <div className="space-y-2">
                                   {stats.topPositiveHighlights.slice(0, 5).map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-                                      <span className="text-sm text-gray-800">{item.phrase}</span>
-                                      <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold">{item.count}</span>
+                                    <div key={idx} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: '#e7f9f1' }}>
+                                      <span style={{ fontSize: '12px', color: '#202233' }}>{item.phrase}</span>
+                                      <span className="text-white px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#0c9e64' }}>{item.count}</span>
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-sm text-gray-500 italic">No specific highlights extracted</p>
+                                <p style={{ fontSize: '12px', color: '#8087a0', fontStyle: 'italic' }}>No specific highlights extracted</p>
                               )}
                             </div>
 
                             {/* Concerns */}
                             <div>
-                              <h3 className="text-md font-semibold text-gray-800 mb-2">
+                              <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#202233', marginBottom: '8px' }}>
                                 Concerns
                               </h3>
                               {stats.topConcerns && stats.topConcerns.length > 0 ? (
                                 <div className="space-y-2">
                                   {stats.topConcerns.slice(0, 5).map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                                      <span className="text-sm text-gray-800">{item.concern}</span>
-                                      <span className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold">{item.count}</span>
+                                    <div key={idx} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: '#ffecec' }}>
+                                      <span style={{ fontSize: '12px', color: '#202233' }}>{item.concern}</span>
+                                      <span className="text-white px-2 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#f13030' }}>{item.count}</span>
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-sm text-gray-500 italic">No specific concerns found</p>
+                                <p style={{ fontSize: '12px', color: '#8087a0', fontStyle: 'italic' }}>No specific concerns found</p>
                               )}
                             </div>
                           </div>
@@ -699,8 +804,13 @@ export default function ReviewsDashboard() {
 
         {/* Photo Gallery */}
         {allImages.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233', marginBottom: '16px' }}>
               Photo Gallery ({allImages.length})
             </h2>
 
@@ -709,6 +819,7 @@ export default function ReviewsDashboard() {
                 <div
                   key={idx}
                   className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                  style={{ border: '1px solid #dde2ec' }}
                   onClick={() => setSelectedImage(imgUrl)}
                 >
                   <img
@@ -724,16 +835,29 @@ export default function ReviewsDashboard() {
 
         {/* Reviews List */}
         {scrapedData && (
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-white mb-6" style={{
+            border: '1px solid #dde2ec',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            padding: '20px'
+          }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#202233' }}>
                 Reviews ({filteredReviews.length})
               </h2>
 
               <select
                 value={filterRating}
                 onChange={(e) => setFilterRating(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid #dde2ec',
+                  borderRadius: '6px',
+                  color: '#202233',
+                  backgroundColor: '#ffffff',
+                  fontSize: '14px',
+                  fontWeight: 500
+                }}
               >
                 <option value="all">All Ratings</option>
                 <option value="5">5 Stars</option>
@@ -748,28 +872,29 @@ export default function ReviewsDashboard() {
               {filteredReviews.map((review) => (
                 <div
                   key={review.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  style={{ border: '1px solid #dde2ec', borderRadius: '8px', padding: '16px' }}
+                  className="hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <div className="font-semibold text-gray-900">
+                      <div style={{ fontWeight: 600, color: '#202233' }}>
                         {review.reviewerName}
                       </div>
-                      <div className="text-sm text-gray-500">{review.date}</div>
+                      <div style={{ fontSize: '12px', color: '#8087a0' }}>{review.date}</div>
                     </div>
                     <div className="flex items-center">
                       <span className="text-yellow-500 text-lg mr-1">{'⭐'.repeat(review.starRating)}</span>
-                      <span className="text-gray-400 text-lg">{'⭐'.repeat(5 - review.starRating)}</span>
+                      <span style={{ color: '#dde2ec', fontSize: '18px' }}>{'⭐'.repeat(5 - review.starRating)}</span>
                     </div>
                   </div>
 
                   {review.isTranslated && (
-                    <div className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded mb-2">
+                    <div className="inline-block px-2 py-1 text-xs rounded mb-2" style={{ backgroundColor: '#ebf7ff', color: '#1985ff' }}>
                       Translated{review.originalLanguage ? ` from ${review.originalLanguage}` : ''}
                     </div>
                   )}
 
-                  <p className="text-gray-700 mb-2">{review.reviewText}</p>
+                  <p style={{ color: '#636986', marginBottom: '8px', fontSize: '14px' }}>{review.reviewText}</p>
 
                   {review.imageUrls.length > 0 && (
                     <div className="flex gap-2 mt-2">
@@ -779,6 +904,7 @@ export default function ReviewsDashboard() {
                           src={imgUrl}
                           alt={`Photo ${idx + 1}`}
                           className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-80"
+                          style={{ border: '1px solid #dde2ec' }}
                           onClick={() => setSelectedImage(imgUrl)}
                         />
                       ))}

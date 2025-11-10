@@ -9,26 +9,43 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <main className="min-h-screen" style={{ backgroundColor: '#f5f7fb' }}>
       {!isAuthenticated ? (
         <AuthPage onAuthenticate={() => setIsAuthenticated(true)} />
       ) : (
         <div>
           {/* Navigation */}
-          <div className="bg-white shadow-sm border-b border-gray-200">
+          <div className="bg-white" style={{
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+            borderBottom: '1px solid #dde2ec'
+          }}>
             <div className="max-w-4xl mx-auto px-4 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">AI Tandem Tools</h2>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#202233' }}>AI Tandem Tools</h2>
                 <div className="flex gap-2">
                   <Link
                     href="/reviews"
-                    className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 transition-colors"
+                    className="text-sm font-semibold text-white transition-colors"
+                    style={{
+                      backgroundColor: '#4a6cf7',
+                      padding: '8px 14px',
+                      borderRadius: '6px'
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#384fd4')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#4a6cf7')}
                   >
                     ⭐ Reviews Dashboard
                   </Link>
                   <Link
                     href="/weather"
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+                    className="text-sm font-semibold text-white transition-colors"
+                    style={{
+                      backgroundColor: '#1985ff',
+                      padding: '8px 14px',
+                      borderRadius: '6px'
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1067d4')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1985ff')}
                   >
                     🪂 Weather Forecast
                   </Link>
