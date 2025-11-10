@@ -38,14 +38,16 @@ export default function Home() {
                   </Link>
                   <Link
                     href="/weather"
-                    className="text-sm font-semibold text-white transition-colors"
+                    className="text-sm font-semibold transition-colors"
                     style={{
-                      backgroundColor: '#1985ff',
+                      backgroundColor: '#ffffff',
+                      color: '#202233',
                       padding: '8px 14px',
-                      borderRadius: '6px'
+                      borderRadius: '6px',
+                      border: '1px solid #dde2ec'
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1067d4')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1985ff')}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f7fb')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
                   >
                     🪂 Weather Forecast
                   </Link>

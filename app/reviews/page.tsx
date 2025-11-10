@@ -313,26 +313,26 @@ export default function ReviewsDashboard() {
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 text-white" style={{ backgroundColor: '#4a6cf7', borderRadius: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 700 }}>{scrapedData.reviews.length}</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Reviews Scraped</div>
+              <div className="p-4" style={{ backgroundColor: '#f5f7fb', borderRadius: '8px', border: '1px solid #dde2ec' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{scrapedData.reviews.length}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Reviews Scraped</div>
               </div>
 
-              <div className="p-4 text-white" style={{ backgroundColor: '#0c9e64', borderRadius: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 700 }}>{scrapedData.averageRating.toFixed(1)}</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Average Rating</div>
+              <div className="p-4" style={{ backgroundColor: '#f5f7fb', borderRadius: '8px', border: '1px solid #dde2ec' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{scrapedData.averageRating.toFixed(1)}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Average Rating</div>
               </div>
 
-              <div className="p-4 text-white" style={{ backgroundColor: '#1985ff', borderRadius: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 700 }}>{allImages.length}</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Photos</div>
+              <div className="p-4" style={{ backgroundColor: '#f5f7fb', borderRadius: '8px', border: '1px solid #dde2ec' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{allImages.length}</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Photos</div>
               </div>
 
-              <div className="p-4 text-white" style={{ backgroundColor: '#f27f00', borderRadius: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 700 }}>
+              <div className="p-4" style={{ backgroundColor: '#f5f7fb', borderRadius: '8px', border: '1px solid #dde2ec' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>
                   {analytics ? totalAnalyzed : 0}
                 </div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>AI Analyzed</div>
+                <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>AI Analyzed</div>
               </div>
             </div>
 
@@ -382,14 +382,15 @@ export default function ReviewsDashboard() {
                 disabled={analyzing}
                 className="font-semibold transition-colors"
                 style={{
-                  backgroundColor: analyzing ? '#a3a9bf' : '#f27f00',
-                  color: '#ffffff',
+                  backgroundColor: analyzing ? '#f5f7fb' : '#ffffff',
+                  color: analyzing ? '#a3a9bf' : '#202233',
                   padding: '8px 14px',
                   borderRadius: '6px',
-                  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)'
+                  border: '1px solid #dde2ec',
+                  cursor: analyzing ? 'not-allowed' : 'pointer'
                 }}
-                onMouseEnter={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#cf6700')}
-                onMouseLeave={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#f27f00')}
+                onMouseEnter={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#f5f7fb')}
+                onMouseLeave={(e) => !analyzing && (e.currentTarget.style.backgroundColor = '#ffffff')}
               >
                 {analyzing ? 'Analyzing...' : 'Re-analyze ALL Reviews'}
               </button>
@@ -435,7 +436,7 @@ export default function ReviewsDashboard() {
                 <div className="w-full rounded-full h-3" style={{ backgroundColor: '#dde2ec' }}>
                   <div
                     className="h-3 rounded-full transition-all"
-                    style={{ width: `${analytics.averageSentimentScores.safetyProfessionalism}%`, backgroundColor: '#0c9e64' }}
+                    style={{ width: `${analytics.averageSentimentScores.safetyProfessionalism}%`, backgroundColor: '#4a6cf7' }}
                   />
                 </div>
               </div>
@@ -448,7 +449,7 @@ export default function ReviewsDashboard() {
                 <div className="w-full rounded-full h-3" style={{ backgroundColor: '#dde2ec' }}>
                   <div
                     className="h-3 rounded-full transition-all"
-                    style={{ width: `${analytics.averageSentimentScores.valueForMoney}%`, backgroundColor: '#1985ff' }}
+                    style={{ width: `${analytics.averageSentimentScores.valueForMoney}%`, backgroundColor: '#4a6cf7' }}
                   />
                 </div>
               </div>
@@ -461,7 +462,7 @@ export default function ReviewsDashboard() {
                 <div className="w-full rounded-full h-3" style={{ backgroundColor: '#dde2ec' }}>
                   <div
                     className="h-3 rounded-full transition-all"
-                    style={{ width: `${analytics.averageSentimentScores.staffServiceQuality}%`, backgroundColor: '#f27f00' }}
+                    style={{ width: `${analytics.averageSentimentScores.staffServiceQuality}%`, backgroundColor: '#4a6cf7' }}
                   />
                 </div>
               </div>
@@ -482,27 +483,27 @@ export default function ReviewsDashboard() {
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="p-4 text-center" style={{ backgroundColor: '#eef3ff', borderRadius: '8px' }}>
+              <div className="p-4 text-center" style={{ backgroundColor: '#eef3ff', borderRadius: '8px', border: '1px solid #d9e3ff' }}>
                 <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{analytics.topicFrequency.safety}</div>
                 <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Safety</div>
               </div>
 
-              <div className="p-4 text-center" style={{ backgroundColor: '#e7f9f1', borderRadius: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 700, color: '#0c9e64' }}>{analytics.topicFrequency.sceneryLocation}</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#eef3ff', borderRadius: '8px', border: '1px solid #d9e3ff' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{analytics.topicFrequency.sceneryLocation}</div>
                 <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Scenery/Location</div>
               </div>
 
-              <div className="p-4 text-center" style={{ backgroundColor: '#ebf7ff', borderRadius: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 700, color: '#1985ff' }}>{analytics.topicFrequency.firstTimeExperience}</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#eef3ff', borderRadius: '8px', border: '1px solid #d9e3ff' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{analytics.topicFrequency.firstTimeExperience}</div>
                 <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>First-Time</div>
               </div>
 
-              <div className="p-4 text-center" style={{ backgroundColor: '#e7f9f1', borderRadius: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 700, color: '#0c9e64' }}>{analytics.topicFrequency.wouldRecommend}</div>
+              <div className="p-4 text-center" style={{ backgroundColor: '#eef3ff', borderRadius: '8px', border: '1px solid #d9e3ff' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#4a6cf7' }}>{analytics.topicFrequency.wouldRecommend}</div>
                 <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Would Recommend</div>
               </div>
 
-              <div className="p-4 text-center" style={{ backgroundColor: '#ffecec', borderRadius: '8px' }}>
+              <div className="p-4 text-center" style={{ backgroundColor: '#ffecec', borderRadius: '8px', border: '1px solid #ffd0d0' }}>
                 <div style={{ fontSize: '24px', fontWeight: 700, color: '#f13030' }}>{analytics.topicFrequency.issuesProblems}</div>
                 <div style={{ fontSize: '12px', color: '#636986', marginTop: '4px' }}>Issues/Problems</div>
               </div>
@@ -582,7 +583,7 @@ export default function ReviewsDashboard() {
                   <ul className="space-y-2">
                     {analytics.commonHiddenCosts.map((cost, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span style={{ color: '#f27f00', marginRight: '8px' }}>💰</span>
+                        <span style={{ marginRight: '8px' }}>💰</span>
                         <span style={{ color: '#636986' }}>{cost}</span>
                       </li>
                     ))}
@@ -596,7 +597,7 @@ export default function ReviewsDashboard() {
                   <ul className="space-y-2">
                     {analytics.improvementSuggestions.map((suggestion, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span style={{ color: '#1985ff', marginRight: '8px' }}>💡</span>
+                        <span style={{ marginRight: '8px' }}>💡</span>
                         <span style={{ color: '#636986' }}>{suggestion}</span>
                       </li>
                     ))}
@@ -720,7 +721,7 @@ export default function ReviewsDashboard() {
                                 <div className="w-full rounded-full h-2" style={{ backgroundColor: '#dde2ec' }}>
                                   <div
                                     className="h-2 rounded-full"
-                                    style={{ width: `${stats.averageSentimentScores.safetyProfessionalism}%`, backgroundColor: '#0c9e64' }}
+                                    style={{ width: `${stats.averageSentimentScores.safetyProfessionalism}%`, backgroundColor: '#4a6cf7' }}
                                   />
                                 </div>
                               </div>
@@ -733,7 +734,7 @@ export default function ReviewsDashboard() {
                                 <div className="w-full rounded-full h-2" style={{ backgroundColor: '#dde2ec' }}>
                                   <div
                                     className="h-2 rounded-full"
-                                    style={{ width: `${stats.averageSentimentScores.valueForMoney}%`, backgroundColor: '#1985ff' }}
+                                    style={{ width: `${stats.averageSentimentScores.valueForMoney}%`, backgroundColor: '#4a6cf7' }}
                                   />
                                 </div>
                               </div>
@@ -746,7 +747,7 @@ export default function ReviewsDashboard() {
                                 <div className="w-full rounded-full h-2" style={{ backgroundColor: '#dde2ec' }}>
                                   <div
                                     className="h-2 rounded-full"
-                                    style={{ width: `${stats.averageSentimentScores.staffServiceQuality}%`, backgroundColor: '#f27f00' }}
+                                    style={{ width: `${stats.averageSentimentScores.staffServiceQuality}%`, backgroundColor: '#4a6cf7' }}
                                   />
                                 </div>
                               </div>
