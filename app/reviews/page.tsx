@@ -685,31 +685,113 @@ export default function ReviewsDashboard() {
                       {/* Pilot Header - Clickable */}
                       <div
                         onClick={() => togglePilot(name)}
-                        className="flex items-center justify-between p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        className="p-4 hover:shadow-md transition-shadow cursor-pointer"
                         style={{ backgroundColor: '#f5f7fb' }}
                       >
-                        <div className="flex-1">
-                          <div style={{ fontWeight: 600, color: '#202233', fontSize: '16px' }}>{name}</div>
-                          <div style={{ fontSize: '14px', color: '#636986' }}>
-                            {stats.totalMentions} mention{stats.totalMentions !== 1 ? 's' : ''} across {stats.reviews.length} review{stats.reviews.length !== 1 ? 's' : ''}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <div className="flex items-center gap-1" style={{ fontSize: '24px', fontWeight: 700, color: '#202233' }}>
-                              {stats.averageRating.toFixed(1)}
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                              </svg>
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#8087a0' }}>
-                              {stats.ratings.join(', ')}
+                        {/* Top Row: Name and Rating */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex-1">
+                            <div style={{ fontWeight: 600, color: '#202233', fontSize: '16px' }}>{name}</div>
+                            <div style={{ fontSize: '12px', color: '#636986' }}>
+                              {stats.totalMentions} mention{stats.totalMentions !== 1 ? 's' : ''} • {stats.reviews.length} review{stats.reviews.length !== 1 ? 's' : ''}
                             </div>
                           </div>
-                          <div style={{ fontSize: '20px', color: '#8087a0' }}>
-                            {isExpanded ? '▼' : '▶'}
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <div className="flex items-center gap-1" style={{ fontSize: '24px', fontWeight: 700, color: '#202233' }}>
+                                {stats.averageRating.toFixed(1)}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                              </div>
+                            </div>
+                            <div style={{ fontSize: '20px', color: '#8087a0' }}>
+                              {isExpanded ? '▼' : '▶'}
+                            </div>
                           </div>
                         </div>
+
+                        {/* Mini Sentiment Bars - Only show when collapsed */}
+                        {!isExpanded && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {/* Overall Experience */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span style={{ fontSize: '10px', fontWeight: 500, color: '#8087a0' }}>Overall</span>
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: '#202233' }}>{stats.averageSentimentScores.overallExperience}</span>
+                              </div>
+                              <div className="w-full rounded-full h-1.5" style={{ backgroundColor: '#dde2ec' }}>
+                                <div
+                                  className="h-1.5 rounded-full"
+                                  style={{ width: `${stats.averageSentimentScores.overallExperience}%`, backgroundColor: '#4a6cf7' }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Safety */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span style={{ fontSize: '10px', fontWeight: 500, color: '#8087a0' }}>Safety</span>
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: '#202233' }}>{stats.averageSentimentScores.safetyProfessionalism}</span>
+                              </div>
+                              <div className="w-full rounded-full h-1.5" style={{ backgroundColor: '#dde2ec' }}>
+                                <div
+                                  className="h-1.5 rounded-full"
+                                  style={{ width: `${stats.averageSentimentScores.safetyProfessionalism}%`, backgroundColor: '#4a6cf7' }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Value */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span style={{ fontSize: '10px', fontWeight: 500, color: '#8087a0' }}>Value</span>
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: '#202233' }}>{stats.averageSentimentScores.valueForMoney}</span>
+                              </div>
+                              <div className="w-full rounded-full h-1.5" style={{ backgroundColor: '#dde2ec' }}>
+                                <div
+                                  className="h-1.5 rounded-full"
+                                  style={{ width: `${stats.averageSentimentScores.valueForMoney}%`, backgroundColor: '#4a6cf7' }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Service */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span style={{ fontSize: '10px', fontWeight: 500, color: '#8087a0' }}>Service</span>
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: '#202233' }}>{stats.averageSentimentScores.staffServiceQuality}</span>
+                              </div>
+                              <div className="w-full rounded-full h-1.5" style={{ backgroundColor: '#dde2ec' }}>
+                                <div
+                                  className="h-1.5 rounded-full"
+                                  style={{ width: `${stats.averageSentimentScores.staffServiceQuality}%`, backgroundColor: '#4a6cf7' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Quick Stats - Only show when collapsed */}
+                        {!isExpanded && (
+                          <div className="flex items-center gap-3 mt-3">
+                            {/* Highlights Count */}
+                            <div className="flex items-center gap-1.5">
+                              <div className="px-2 py-1 rounded text-xs font-medium" style={{ backgroundColor: '#e7f9f1', color: '#0c9e64' }}>
+                                ✓ {stats.topPositiveHighlights?.length || 0} highlights
+                              </div>
+                            </div>
+
+                            {/* Concerns Count */}
+                            {stats.topConcerns && stats.topConcerns.length > 0 && (
+                              <div className="flex items-center gap-1.5">
+                                <div className="px-2 py-1 rounded text-xs font-medium" style={{ backgroundColor: '#ffecec', color: '#f13030' }}>
+                                  ! {stats.topConcerns.length} concerns
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Expanded Details */}
