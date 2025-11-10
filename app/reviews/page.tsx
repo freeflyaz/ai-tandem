@@ -167,8 +167,13 @@ export default function ReviewsDashboard() {
     }
   };
 
-  // Collect all images from reviews
+  // Collect all images from reviews and proxy them
   const allImages = scrapedData?.reviews.flatMap(r => r.imageUrls) || [];
+
+  // Helper function to proxy image URLs
+  const getProxiedImageUrl = (url: string) => {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  };
 
   // Filter reviews by rating
   const filteredReviews = scrapedData?.reviews.filter(review => {
@@ -583,7 +588,10 @@ export default function ReviewsDashboard() {
                   <ul className="space-y-2">
                     {analytics.commonHiddenCosts.map((cost, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span style={{ marginRight: '8px' }}>💰</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f27f00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', marginTop: '2px', flexShrink: 0 }}>
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
                         <span style={{ color: '#636986' }}>{cost}</span>
                       </li>
                     ))}
@@ -597,7 +605,17 @@ export default function ReviewsDashboard() {
                   <ul className="space-y-2">
                     {analytics.improvementSuggestions.map((suggestion, idx) => (
                       <li key={idx} className="flex items-start">
-                        <span style={{ marginRight: '8px' }}>💡</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a6cf7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px', marginTop: '2px', flexShrink: 0 }}>
+                          <circle cx="12" cy="12" r="5"/>
+                          <line x1="12" y1="1" x2="12" y2="3"/>
+                          <line x1="12" y1="21" x2="12" y2="23"/>
+                          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                          <line x1="1" y1="12" x2="3" y2="12"/>
+                          <line x1="21" y1="12" x2="23" y2="12"/>
+                          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
                         <span style={{ color: '#636986' }}>{suggestion}</span>
                       </li>
                     ))}
@@ -678,8 +696,11 @@ export default function ReviewsDashboard() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div style={{ fontSize: '24px', fontWeight: 700, color: '#202233' }}>
-                              {stats.averageRating.toFixed(1)} ⭐
+                            <div className="flex items-center gap-1" style={{ fontSize: '24px', fontWeight: 700, color: '#202233' }}>
+                              {stats.averageRating.toFixed(1)}
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                              </svg>
                             </div>
                             <div style={{ fontSize: '12px', color: '#8087a0' }}>
                               {stats.ratings.join(', ')}
@@ -824,7 +845,7 @@ export default function ReviewsDashboard() {
                   onClick={() => setSelectedImage(imgUrl)}
                 >
                   <img
-                    src={imgUrl}
+                    src={getProxiedImageUrl(imgUrl)}
                     alt={`Review photo ${idx + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -883,9 +904,22 @@ export default function ReviewsDashboard() {
                       </div>
                       <div style={{ fontSize: '12px', color: '#8087a0' }}>{review.date}</div>
                     </div>
-                    <div className="flex items-center">
-                      <span className="text-yellow-500 text-lg mr-1">{'⭐'.repeat(review.starRating)}</span>
-                      <span style={{ color: '#dde2ec', fontSize: '18px' }}>{'⭐'.repeat(5 - review.starRating)}</span>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <svg
+                          key={i}
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill={i < review.starRating ? '#fbbf24' : '#dde2ec'}
+                          stroke={i < review.starRating ? '#fbbf24' : '#dde2ec'}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                      ))}
                     </div>
                   </div>
 
@@ -902,7 +936,7 @@ export default function ReviewsDashboard() {
                       {review.imageUrls.map((imgUrl, idx) => (
                         <img
                           key={idx}
-                          src={imgUrl}
+                          src={getProxiedImageUrl(imgUrl)}
                           alt={`Photo ${idx + 1}`}
                           className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-80"
                           style={{ border: '1px solid #dde2ec' }}
@@ -924,7 +958,7 @@ export default function ReviewsDashboard() {
             onClick={() => setSelectedImage(null)}
           >
             <img
-              src={selectedImage}
+              src={getProxiedImageUrl(selectedImage)}
               alt="Full size"
               className="max-w-full max-h-full object-contain"
             />
